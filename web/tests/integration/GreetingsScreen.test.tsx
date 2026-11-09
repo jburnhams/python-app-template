@@ -114,6 +114,10 @@ describe('Greetings', () => {
     await user.click(screen.getByRole('button', { name: 'Remove 2' }))
     expect(greetings()).toHaveLength(6)
     expect(screen.getByText('Removed 2 greetings.')).toBeInTheDocument()
+    // Undo, so nothing is left to commit when the screen unmounts (leaving the screen commits a pending
+    // removal, which would then run against the next test's server).
+    await user.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(greetings()).toHaveLength(8)
   })
 
   it('keeps a greeting gone when a bulk removal fails part way, and brings back only the rest', async () => {

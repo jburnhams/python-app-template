@@ -1,4 +1,4 @@
-"""Hello-world domain logic and persistent message log."""
+"""Hello-world domain logic and persistent message log (`<data_dir>/messages.json`, newest first)."""
 import json, os
 from datetime import datetime, timezone
 
@@ -39,12 +39,49 @@ def add_message(name: str = 'World', greeting: str | None = None) -> dict:
     os.makedirs(settings.data_dir(), exist_ok=True)
     with open(lock_path, 'a+', encoding='utf8') as lf, oslib.file_lock(lf):
         items = list_messages()
-        entry = dict(id=len(items) + 1, **rec, created=datetime.now(timezone.utc).isoformat())
+        # Ids are never reused: the count drops when a greeting is removed, and so does the largest id when the newest one goes. The web app hides a removed row by its id
+        # until the removal is committed (useUndoable), so a new greeting under a removed id would vanish with it. `messages.seq` remembers the last id handed out.
+        entry = dict(id=max(_last_id(), max((m.get('id', 0) for m in items), default=0)) + 1, **rec, created=datetime.now(timezone.utc).isoformat())
         items.insert(0, entry)
-        tmp = _store_path() + '.tmp'
-        with open(tmp, 'w', encoding='utf8') as f: json.dump(items, f, indent=1)
-        os.replace(tmp, _store_path())
+        _write(items)
+        with open(_seq_path(), 'w', encoding='utf8') as f: f.write(str(entry['id']))
     return entry
+
+
+def _seq_path() -> str:
+    return os.path.join(settings.data_dir(), 'messages.seq')
+
+
+def _last_id() -> int:
+    try:
+        with open(_seq_path(), encoding='utf8') as f: return int(f.read().strip() or 0)
+    except (OSError, ValueError): return 0
+
+
+def _write(items: list[dict]) -> None:
+    tmp = _store_path() + '.tmp'
+    with open(tmp, 'w', encoding='utf8') as f: json.dump(items, f, indent=1)
+    os.replace(tmp, _store_path())
+
+
+def page_messages(after: int | None = None, limit: int = 20) -> dict:
+    """One page of the log, newest first: the greetings after the one with id `after` (the last one the client holds), and whether there are more.
+
+    A cursor, not an offset: greetings removed between pages would make an offset skip the ones that moved up to fill the gap. Ids grow with time, so `after` still works when that greeting has itself been removed."""
+    items = list_messages()
+    rest = items if after is None else [m for m in items if m.get('id', 0) < after]
+    return dict(messages=rest[:limit], has_more=len(rest) > limit)
+
+
+def remove_message(message_id: int) -> dict | None:
+    """Remove one greeting by id; returns it, or None when there is no such greeting."""
+    lock_path = _store_path() + '.lock'
+    os.makedirs(settings.data_dir(), exist_ok=True)
+    with open(lock_path, 'a+', encoding='utf8') as lf, oslib.file_lock(lf):
+        items = list_messages()
+        found = next((m for m in items if m.get('id') == message_id), None)
+        if found is not None: _write([m for m in items if m is not found])
+    return found
 
 
 def clear_messages() -> dict:

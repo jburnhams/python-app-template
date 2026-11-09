@@ -1,34 +1,30 @@
 import { describe, expect, it } from 'vitest'
-import { http, HttpResponse } from 'msw'
-import App from '../../src/App'
-import { api } from '../../src/api'
-import { Card } from '../../src/components/ui'
-import { setup, screen } from '../utils/render'
-import { server } from '../utils/server'
+import { openApp, screen, within } from '../utils/render'
 
-const open = (hash: string) => { window.location.hash = hash; return setup(<App />) }
+describe('the app frame', () => {
+  it('marks the current screen in the menu and moves between screens by link', async () => {
+    const { user, router } = openApp('/')
+    const menu = screen.getByRole('navigation', { name: 'Main' })
+    expect(within(menu).getByRole('link', { name: 'Greetings' })).toHaveAttribute('aria-current', 'page')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Greetings' })).toBeInTheDocument()
 
-describe('App navigation and header', () => {
-  it('shows the server version and navigates between Greetings and Settings', async () => {
-    open('#/')
-    expect(await screen.findByText('v0.1.0')).toBeInTheDocument()
-    expect(await screen.findByText('Hello, World!')).toBeInTheDocument()
-
-    window.location.hash = '#/settings'
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
-    expect(await screen.findByText('Application settings')).toBeInTheDocument()
+    await user.click(within(menu).getByRole('link', { name: 'Settings' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/settings')
+    expect(within(menu).getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('renders cleanly when the health check fails and exercises api.hello and Card link', async () => {
-    server.use(http.get('/api/health', () => new HttpResponse(null, { status: 500 })))
-    open('#/')
-    expect(await screen.findByText('Hello, World!')).toBeInTheDocument()
-    expect(screen.queryByText('v0.1.0')).toBeNull()
+  it('says when a path has no screen, with the way back', async () => {
+    const { user, router } = openApp('/old/bookmark')
+    expect(screen.getByRole('heading', { level: 1, name: 'No such page' })).toBeInTheDocument()
+    expect(screen.getByText('There is nothing at /old/bookmark')).toBeInTheDocument()
+    await user.click(screen.getByRole('link', { name: 'Go to greetings' }))
+    expect(router.state.location.pathname).toBe('/')
+  })
 
-    const g = await api.hello('Ada', 'Welcome')
-    expect(g.message).toBe('Welcome, Ada!')
-
-    setup(<Card to="#/settings">Go settings</Card>)
-    expect(screen.getByRole('link', { name: 'Go settings' })).toHaveAttribute('href', '#/settings')
+  it('renders in the dark scheme', async () => {
+    openApp('/log', { colorScheme: 'dark' })
+    expect(await screen.findByRole('heading', { level: 1, name: 'Log' })).toBeInTheDocument()
+    expect(document.documentElement).toHaveClass('dark')
   })
 })

@@ -1,6 +1,6 @@
 import { mergeConfig, defineConfig } from 'vitest/config'
 import { readFileSync } from 'node:fs'
-import baseConfig from './vitest.config'
+import baseConfig from './vitest.config.ts'
 
 // The coverage gate: unit + integration together must stay at or above the floors in coverage-floor.json.
 // The floors only ratchet up: after CI is green, raise them to the floor of the new totals. Never lower them.

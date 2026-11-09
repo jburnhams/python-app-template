@@ -9,8 +9,8 @@ You run without a human: nobody will answer questions, approve a plan or review 
 ## 0. Orient yourself (read before writing anything)
 
 1. Read `AGENTS.md` and `CLAUDE.md` at the repo root. They are authoritative. Python code is out of scope: don't touch `src/app/`, the Python `tests/`, `pyproject.toml` or the workflows. **This task runs in parallel with the backend unit-test and integration-test tasks on other branches**, which never touch `web/`; keep your changes inside `web/` so nothing collides. Your notes live only in `web/tests/README.md`.
-2. Read **`web/tests/README.md`** in full, then everything in `web/tests/utils/` (`server.ts`: the one msw server and its default happy-path handlers; `setup.ts`: the jsdom setup; `render.tsx`: the Testing Library + user-event setup helper) and the existing tests in `unit/` and `integration/`.
-3. Stack: React 19, TypeScript, Vite 7, vitest 4, Testing Library, user-event, msw v3. Source is in `web/src/` (`api.ts` is the typed client). The app calls the FastAPI backend through same-origin relative `/api/...` URLs via `withBase()`.
+2. Read **`web/tests/README.md`** in full, then everything in `web/tests/utils/` (`server.ts`: the one msw server over the app's mock handlers in `web/src/mocks/handlers.ts`; `setup.ts`: the jsdom setup with Strata's layout shims; `render.tsx`: `openApp(route)`, the app's route tree through strata-react's `renderRoutes`) and the existing tests in `unit/` and `integration/`.
+3. Stack: Node 26, React 19, TypeScript, Vite 8, vitest 5, Testing Library, user-event, msw v3, strata-react (components and `strata-react/testing`). Source is in `web/src/` (`api.ts` is the typed client, `screens/` the screens, `mocks/` the mock server). The app calls the FastAPI backend through same-origin relative `/api/...` URLs via `withBase()`.
 4. Test projects: `unit` runs in node (`tests/unit/**`); `integration` runs in jsdom (`tests/integration/**`, setup `utils/setup.ts`). Commands, from `web/`: `npm ci`, `npm run test:unit`, `npm run test:integration`, `npm run test:coverage:gate` (unit + integration together, what CI gates on; floors in `web/coverage-floor.json`), `npm run test:coverage:all` (no gate), `npm run test:coverage` (unit only, informational), `npm run typecheck`, `npm run build`.
 
 ## 1. Choose the slice (data-driven, so reruns don't collide)
@@ -21,7 +21,7 @@ You run without a human: nobody will answer questions, approve a plan or review 
 
 ## 2. How to write the tests
 
-- Every endpoint the app calls needs a default happy-path handler in `utils/server.ts`; a request without a handler fails the test (`onUnhandledFrame: 'error'`). Per-test variations use `server.use(...)` inside the test. Never stub `fetch` by hand.
+- Every endpoint the app calls needs a default happy-path handler in `web/src/mocks/handlers.ts` (named state handlers beside it); a request without a handler fails the test (`onUnhandledFrame: 'error'`). Per-test variations use `server.use(...)` inside the test. Never stub `fetch` by hand.
 - **Behaviour, not implementation.** Query by role, label or text (`getByRole`, `findByText`). No class-name queries, no snapshots.
 - Cover happy path, loading state, empty state, server error (4xx/5xx with `{ detail }`), edge values, and user interactions.
 - Placement: pure/no-DOM -> `tests/unit/<name>.test.ts`; renders React or needs jsdom -> `tests/integration/<Name>.test.tsx`.

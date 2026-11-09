@@ -4,6 +4,12 @@ Newest first, grouped by day. One entry per change, in the same commit or PR as 
 
 ## 2026-11-09
 
+**AGENTS.md reorganised as the basis for apps made from the template (branch `claude/project-thread-iw7199`)**
+Asked to make the agent instructions suitable as the starting point for future apps, and to point database work at the shared database project.
+
+- `AGENTS.md`: regrouped into rules for every change (run `scripts/check`, changelog and docs in the same commit, comment the why, no secrets or machine-specific details, strict types, tests, report what was run), layout, Python tooling, tests, web, CI and a closing checklist. Says which parts to keep unchanged in a derived app. Content of the earlier bullets is kept.
+- `AGENTS.md`: **new** Database section. Apps use [jburnhams/database](https://github.com/jburnhams/database) (one shared database, one schema per app, models and migrations in the app repo, `dbtool check` in CI, never one database per app) and link its adoption guide rather than repeating it.
+
 **Generic deployment notes and a systemd unit example (branch `claude/project-thread-iw7199`)**
 A Docker image was dropped from the plan because apps are not deployed that way. These files are deliberately free of machine-specific details.
 

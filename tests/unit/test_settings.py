@@ -36,6 +36,8 @@ def test_save_load_and_reset():
 
     with pytest.raises(KeyError, match="unknown setting"):
         settings.save({"unknown_key": "val"})
+    with pytest.raises(ValueError, match="data_dir: must be an absolute path"):
+        settings.save({"data_dir": "relative"})
 
 
 def test_corrupt_or_non_dict_settings_file():

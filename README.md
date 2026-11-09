@@ -18,7 +18,7 @@ For hot-reload frontend development, run `./app serve` in one terminal and `cd w
 ## Using this template for a new project
 
 1. Create a new repository from `python-app-template` on GitHub (or clone it).
-2. Rename `src/app` and the `./app` / `app.cmd` launchers if you want a project-specific package name, and update `pyproject.toml` (`source = ["src/<pkg>"]`), `web/vite.config.ts` (`outDir`), and `APP_HOME` / `APP_DATA` in `src/<pkg>/settings.py`.
+2. Rename `src/app` and the `./app` / `app.cmd` launchers if you want a project-specific package name, and update `pyproject.toml` (`source = ["src/<pkg>"]`), `web/vite.config.ts` (`outDir`), and the settings prefix (`Settings("app", ...)`, `APP_DATA`) in `src/<pkg>/settings.py` and `strata_env_prefix` in `pyproject.toml`.
 3. Replace the sample greeting module (`src/app/greet.py`) and screens (`web/src/screens/`) with your own, keeping the shape: one question per screen, every read through `useLoad`/`DataView`, mock handlers in `web/src/mocks/` for every endpoint.
 4. Give the app its own look: regenerate `web/src/styles/theme.generated.css` with ux-research's `palette.mjs` from seeds that come from your subject, then re-solve the status roles and faces in `theme.css` (the header of each file has the command and the checks).
 5. Rewrite the visual baselines once the screens are yours: `cd web && npm run test:visual:update`, look at every PNG, commit them.
@@ -38,7 +38,7 @@ For hot-reload frontend development, run `./app serve` in one terminal and `cd w
 uv sync                                 # runtime + dev dependencies from uv.lock
 uv run pytest tests/unit --cov                 # unit tests + coverage (CI gates on fail_under in pyproject.toml)
 uv run pytest tests/integration -n auto        # CLI and HTTP API end-to-end
-scripts/check                           # the whole gate: lockfile, ruff lint + format, pyright strict, ty, unit tests + coverage
+scripts/check                           # the whole gate (strata-check from strata-python): lockfile, ruff lint + format, pyright strict, ty, unit tests + coverage
 cd web && npm run test:coverage:gate    # web unit + jsdom integration tests against coverage-floor.json
 cd web && npm run storybook             # every screen in every server state, on :6006
 cd web && npm run test:visual           # build the app and Storybook, then screenshot both light and dark against tests/visual/baselines/

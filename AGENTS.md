@@ -18,16 +18,18 @@ A Python backend (FastAPI + CLI) and a React frontend built on [strata-react](ht
 
 ## Layout and conventions
 
+- Shared server code is the [strata-python](https://github.com/jburnhams/strata-python) library (read its `AGENTS.md`): `oslib`, the `Settings` class, `web.base_app`/`add_web`/`with_base`/`serve`, the `doctor`/`set`/`serve` CLI commands, the pytest plugin and the `strata-check` gate. Do not copy those modules into the app; if the library lacks something every app needs, change it there. This repo only declares its settings (`settings.py`), its own routes (`server/app.py`) and its own commands (`cli.py`).
 - Python application code lives in `src/app/` (the package name is changed per app, see the README); the React web app lives in `web/src/` and builds into `src/app/server/static/`, which `app serve` serves at every non-API path.
 - The web app follows strata-react's rules (its `CLAUDE.md`, "Building an app on Strata"): only Strata components and theme roles (no raw palette colours, arbitrary values or `dark:` overrides), every remote read `useLoad`/`useInfiniteLoad` → `DataView`/`InfiniteList` with skeleton and empty state, one filled button per view at a time (the `BulkBar` action takes it while rows are chosen), reversible removals through `useUndoable`, URL state for sort/tab, numbers and dates through `format`. Each screen in `web/src/screens/` opens with its one question. Something Strata lacks is raised as an issue on strata-react, not hand-built here.
-- Cross-platform (Linux, macOS, Windows): OS differences (file locks, process liveness and termination, priority, how to start the CLI) live in `src/app/oslib.py`; do not import `fcntl` or call `os.kill(pid, 0)` elsewhere (on Windows that terminates the process).
+- Cross-platform (Linux, macOS, Windows): OS differences (file locks, process liveness and termination, priority, how to start the CLI) live in `strata_python.oslib`; do not import `fcntl` or call `os.kill(pid, 0)` elsewhere (on Windows that terminates the process).
 - Reverse-proxy support: the server gives every page a relative `<base href>` back to its root (`with_base` in `server/app.py`), the web build uses relative asset paths (`base: './'` in `vite.config.ts`), and `BASE` comes from the page's base URL (`web/src/api.ts`); it is React Router's `basename`. Any URL the app builds for `fetch`, `<img>` or an external link must go through `withBase`; in-app links are router paths.
 - Docs live in `docs/`: `overview.md` (design brief), `implementation-plan.md` (milestones and next steps), `progress.md` (log of findings and decisions), `deploying.md` (running it as a service; keep it generic), `prompts/` (unattended agent prompts for backend unit, integration and web tests).
 
 ## Python tooling (uv)
 
 - `uv sync` builds `.venv` from the committed `uv.lock`; `uv run <cmd>` runs inside it; `uv add <pkg>` / `uv add --group dev <pkg>` change dependencies (commit `pyproject.toml` and `uv.lock` together). Version, dependencies, the `app` entry point and every tool's configuration are in `pyproject.toml`; the version lives only there (`app.__version__` reads it back). `./app` and `app.cmd` are thin wrappers for `uv run app`.
-- `scripts/check` runs `uv lock --check`, `ruff check`, `ruff format --check`, `pyright` and `ty`, then the unit tests with coverage.
+- `scripts/check` is `uv run --locked strata-check` (from strata-python): `uv lock --check`, `ruff check`, `ruff format --check`, `pyright` and `ty`, then the unit tests with coverage. Options such as the checked paths are in `[tool.strata-check]` in `pyproject.toml`.
+- strata-python is a git dependency that tracks its `main` branch (`[tool.uv.sources]`, no tag); `uv.lock` pins the commit. `.github/workflows/upgrade-strata-python.yml` runs `uv lock --upgrade-package strata-python` weekly, runs the gate and integration tests on the result and opens a PR. Do the same by hand to pick up a library change at once.
 - `uv run pytest tests/unit --cov` runs the unit suite with coverage (random order via pytest-randomly; `-n auto` runs in parallel; `diff-cover` checks the lines a change touches). `uv run pytest tests/integration -n auto` runs the integration suite.
 - `uv run app doctor` checks the environment; `uv run app hello [name]` prints and records a greeting; `uv run app serve` runs the web server on port 8360.
 - Python coverage is calculated from the unit suite only (`fail_under` in `pyproject.toml`).
@@ -37,7 +39,7 @@ A Python backend (FastAPI + CLI) and a React frontend built on [strata-react](ht
 
 Prefer real code over mocks. A test that runs the real thing finds the bugs that matter; a mock only proves the code agrees with the test.
 
-- **Real by default**: real HTTP requests (against a real local server: the `http_server` fixture in `tests/utils/http_server.py`, or `uvicorn` on loopback for the app itself), real embedded databases (SQLite, or the Postgres service container, via the database project's `db_session` fixtures; see Database), real files in `tmp_path`, real subprocesses. In the web app that means MSW answering real `fetch` calls, never a stubbed `fetch` or a mocked module.
+- **Real by default**: real HTTP requests (against a real local server: the `http_server` fixture from the strata-python plugin, or its `live_app` fixture to run the app itself on a loopback port), real embedded databases (SQLite, or the Postgres service container, via the database project's `db_session` fixtures; see Database), real files in `tmp_path`, real subprocesses. In the web app that means MSW answering real `fetch` calls, never a stubbed `fetch` or a mocked module.
 - **Mocks and fakes are the exception**: use one only for a true external (a paid or remote service, hardware, the clock) and only in quick unit tests that cover many cases where speed is the point. Never mock your own modules or the database. Even then, keep one test of the same path against the real thing.
 - **Install what the tests need**: CI runners can have software installed. If code calls `ffmpeg`, install it (locally and in the workflow) and run it; do not mock it or skip when it is missing. Add the install to the workflow and say so in the README.
 - **No silent skips, no swallowed errors**: a test must not pass or skip because something was missing or an exception was caught. `pytest.importorskip` is banned (ruff). A test is skipped only deliberately: a marker or `skipif` with a **reason** and an explicit switch, for example a 12 GB model that is too large for CI is `@pytest.mark.skipif(not os.environ.get("RUN_LARGE_MODEL"), reason="needs the 12 GB model; set RUN_LARGE_MODEL=1")` and runs on the machine that has it. Skips show in the summary (`-ra`); any new skip is mentioned in the PR.
@@ -48,7 +50,7 @@ Prefer real code over mocks. A test that runs the real thing finds the bugs that
 - Tests live under `tests/`, grouped by type:
   - `tests/unit/`: fast, isolated tests of pure logic and mocked boundaries (synthetic data, fakes). No external processes or network.
   - `tests/integration/`: end-to-end tests that run the CLI (in-process and as a subprocess) and the FastAPI HTTP API over real on-disk state.
-  - `tests/utils/`: shared helpers (`http_server.py`, a real scripted loopback HTTP server; `fakes.py`, last-resort doubles for the outside world). `tests/conftest.py` holds shared fixtures and makes every suite hermetic (isolated home and data dir, no network).
+  - `tests/utils/`: shared helpers (`fakes.py`, last-resort doubles for the outside world). The strata-python pytest plugin (configured by `strata_env_prefix` and `strata_tuning_vars` in `pyproject.toml`) makes every suite hermetic (isolated home and data dir, no network) and provides the `http_server` and `live_app` fixtures; `tests/conftest.py` holds the rest.
 - Read `tests/README.md` before writing any Python test: fixtures, conventions, file-ownership rules and the per-module coverage ledger.
 
 ## Web
@@ -72,7 +74,7 @@ The template ships no database (the sample keeps JSON files in the data folder).
 
 ## CI
 
-`.github/workflows/unit.yml` (`scripts/check --fast` once, then unit tests with coverage on Linux Python 3.11-3.13, macOS and Windows; web typecheck, coverage gate, build, Storybook build; visual regression) and `integration.yml` (integration tests on Linux, macOS and Windows, web component tests, a weekly dependency audit, weekly and on demand). `.github/dependabot.yml` keeps uv, npm and Actions dependencies current. CI installs with `uv sync --locked`, so a stale lockfile fails the build.
+`.github/workflows/unit.yml` (`strata-check --fast` once, then unit tests with coverage on Linux Python 3.11-3.13, macOS and Windows; web typecheck, coverage gate, build, Storybook build; visual regression) and `integration.yml` (integration tests on Linux, macOS and Windows, web component tests, a weekly dependency audit, weekly and on demand). `.github/dependabot.yml` keeps uv, npm and Actions dependencies current. CI installs with `uv sync --locked`, so a stale lockfile fails the build.
 
 ## Before you say it is done
 

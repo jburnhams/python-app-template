@@ -5,7 +5,9 @@ import os
 from datetime import UTC, datetime
 from typing import Any, cast
 
-from app import oslib, settings
+from strata_python import oslib
+
+from app import settings
 
 # A greeting record as stored in messages.json and returned by the API: id, name, greeting, message, created.
 Record = dict[str, Any]

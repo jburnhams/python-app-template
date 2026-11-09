@@ -27,7 +27,7 @@ CI (`.github/workflows/`): `unit.yml` (lint, unit tests with coverage on Linux f
 - `unit/`: fast, isolated, synthetic data and fakes; no external services or network.
 - `integration/`: the CLI (in process and as a real process) and the HTTP API over real on-disk files. Not part of the coverage gate.
 - Both suites are hermetic (autouse in `conftest.py`): `~`, `APP_HOME` and `APP_DATA` point into a tmp dir outside `tmp_path`, tuning/override variables (`APP_GREETING`) are removed, and any outbound (non-loopback) connection fails the test.
-- `utils/`: helpers importable by name in any test (`tests/utils` is on `pythonpath`). `http_server.py` is a real HTTP server on loopback, scripted per test, behind the `http_server` fixture: use it for anything that makes outbound requests. `fakes.py` (`FakeUrlopen`, `FakePopen`, `FakeRun`) are last-resort doubles; see the testing policy in `AGENTS.md`: real requests, real embedded databases and real programs by default, mocks only for true externals in quick many-case unit tests, no silent skips.
+- `utils/`: helpers importable by name in any test (`tests/utils` is on `pythonpath`). The strata-python plugin provides the `http_server` fixture, a real HTTP server on loopback scripted per test: use it for anything that makes outbound requests. `fakes.py` (`FakeUrlopen`, `FakePopen`, `FakeRun`) are last-resort doubles; see the testing policy in `AGENTS.md`: real requests, real embedded databases and real programs by default, mocks only for true externals in quick many-case unit tests, no silent skips.
 - One test file per module (`greet.py` -> `unit/test_greet.py`; add to the existing file if there is one).
 
 ## Who owns which files (so parallel branches don't conflict)

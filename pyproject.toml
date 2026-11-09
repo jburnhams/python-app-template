@@ -12,8 +12,13 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn>=0.32",
     "pydantic>=2.9",
+    "strata-python",     # shared server code: oslib, settings, web serving, CLI commands, test plugin, strata-check
     "tzdata; sys_platform == 'win32'",   # IANA timezone database, needed on Windows for zoneinfo
 ]
+
+[tool.uv.sources]
+# Tracks main (no tag): uv.lock pins the commit, `uv lock --upgrade-package strata-python` moves it (the weekly workflow does that)
+strata-python = { git = "https://github.com/jburnhams/strata-python" }
 
 [project.scripts]
 app = "app.cli:main"
@@ -40,6 +45,8 @@ artifacts = ["src/app/server/static/**"]
 
 [tool.pytest.ini_options]
 pythonpath = ["tests/utils"]
+strata_env_prefix = "APP"                 # strata-python plugin: APP_HOME and APP_DATA point into a tmp dir for every test
+strata_tuning_vars = ["APP_GREETING"]     # removed from the environment for every test
 testpaths = ["tests/unit"]
 addopts = "-ra --timeout=300 --strict-markers --strict-config"
 filterwarnings = ["ignore:Using `httpx` with `starlette.testclient`"]       # TestClient noise from the installed starlette; remove when the dependency moves on

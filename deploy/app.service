@@ -9,7 +9,10 @@ After=network.target
 [Service]
 WorkingDirectory=%h/path/to/checkout
 # `--locked` refuses to start if uv.lock and pyproject.toml disagree, instead of silently changing the environment.
-ExecStart=uv run --locked --no-dev app serve --host 127.0.0.1 --port 8360
+# systemd does not search ~/.local/bin, so give uv's full path (`command -v uv` shows it; %h is your home folder).
+ExecStart=%h/.local/bin/uv run --locked --no-dev app serve --host 127.0.0.1 --port 8360
+# Keep the data outside the checkout (see docs/deploying.md): set this to an absolute folder before the first start.
+Environment=APP_DATA=%h/path/to/data
 Restart=on-failure
 RestartSec=3
 

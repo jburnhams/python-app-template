@@ -9,6 +9,8 @@
 // - a reversible removal is useUndoable -> UndoBar (no confirm dialog), rows filtered with
 //   isRemoved, and the commit is the request plus the invalidation;
 // - checkboxes only because a bulk action exists: useSelection -> DataTable selection -> BulkBar;
+// - one filled button per view at a time: while greetings are chosen, the bulk "Remove N" is the
+//   filled one and "Send greeting" steps down to outline until the selection clears;
 // - the sort is in the URL (?sort=sent.asc), so a sorted table can be linked and reloaded.
 import { useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
@@ -110,7 +112,7 @@ export function GreetingsScreen() {
         <Metric label="Most used greeting" value={favourite?.word ?? '–'} note={favourite ? `Used ${format.count(favourite.times, 'time')}` : 'None sent yet'} />
       </MetricStrip>
 
-      <GreetingForm />
+      <GreetingForm primary={selection.count === 0} />
 
       <section aria-labelledby="kept" className="grid gap-3">
         <h2 id="kept" className="type-heading">Kept greetings</h2>
@@ -144,8 +146,9 @@ export function GreetingsScreen() {
   )
 }
 
-/** Send a greeting. Its own component so typing does not re-render the table. */
-export function GreetingForm() {
+/** Send a greeting. Its own component so typing does not re-render the table. `primary` is false
+ *  while rows are chosen, when the bulk action holds the view's one filled button. */
+export function GreetingForm({ primary = true }: { primary?: boolean }) {
   const queryClient = useQueryClient()
   const [name, setName] = useState('')
   const [word, setWord] = useState('')
@@ -179,7 +182,7 @@ export function GreetingForm() {
           <Input value={word} onChange={e => setWord(e.target.value)} autoComplete="off" />
         </Field>
         <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-          <AsyncButton type="submit" variant="default" phase={send.phase} error={send.error} labels={{ idle: 'Send greeting', pending: 'Sending…', done: 'Sent' }} />
+          <AsyncButton type="submit" variant={primary ? 'default' : 'outline'} phase={send.phase} error={send.error} labels={{ idle: 'Send greeting', pending: 'Sending…', done: 'Sent' }} />
           {send.phase === 'error' && <p className="type-body-sm text-danger">{send.error} Nothing was kept.</p>}
         </div>
       </form>

@@ -108,9 +108,15 @@ describe('Greetings', () => {
   it('removes the chosen greetings together from the bulk bar', async () => {
     const { user } = openApp('/')
     await screen.findByRole('table')
+    // One filled button at a time: Send greeting is filled until rows are chosen, then the bulk action is.
+    // The filled buttons, by accessible name (AsyncButton keeps every phase's label in its text for its width).
+    const named = ['Send greeting', 'Remove 2']
+    const filled = () => screen.getAllByRole('button').filter(b => b.className.includes('bg-primary')).map(b => named.find(name => screen.queryByRole('button', { name }) === b) ?? b.textContent)
+    expect(filled()).toEqual(['Send greeting'])
     await user.click(screen.getByRole('checkbox', { name: 'Select Welcome, Frances!' }))
     await user.click(screen.getByRole('checkbox', { name: 'Select Hello, Ken!' }))
     expect(screen.getByText(/^2\sgreetings selected$/)).toBeInTheDocument()
+    expect(filled()).toEqual(['Remove 2'])
     await user.click(screen.getByRole('button', { name: 'Remove 2' }))
     expect(greetings()).toHaveLength(6)
     expect(screen.getByText('Removed 2 greetings.')).toBeInTheDocument()
@@ -118,6 +124,7 @@ describe('Greetings', () => {
     // removal, which would then run against the next test's server).
     await user.click(screen.getByRole('button', { name: 'Undo' }))
     expect(greetings()).toHaveLength(8)
+    expect(filled()).toEqual(['Send greeting'])
   })
 
   it('keeps a greeting gone when a bulk removal fails part way, and brings back only the rest', async () => {

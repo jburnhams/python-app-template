@@ -74,7 +74,7 @@ The template ships no database (the sample keeps JSON files in the data folder).
 
 ## CI
 
-`.github/workflows/unit.yml` (`strata-check --fast` once, then unit tests with coverage on Linux Python 3.11-3.13, macOS and Windows; web typecheck, coverage gate, build, Storybook build; visual regression) and `integration.yml` (integration tests on Linux, macOS and Windows, web component tests, a weekly dependency audit, weekly and on demand). `.github/dependabot.yml` keeps uv, npm and Actions dependencies current. CI installs with `uv sync --locked`, so a stale lockfile fails the build.
+`.github/workflows/unit.yml` (`strata-check --fast` once, then unit tests with coverage on Linux Python 3.11-3.13, macOS and Windows; web typecheck, coverage gate, build, Storybook build; visual regression) and `integration.yml` (integration tests on Linux, macOS and Windows, web component tests, a weekly dependency audit, weekly and on demand). `update-visual-baselines.yml` (manual) rewrites the visual baselines on the CI runner for a branch, which is how a Dependabot browser or icon bump gets new baselines. `.github/dependabot.yml` keeps uv, npm and Actions dependencies current. CI installs with `uv sync --locked`, so a stale lockfile fails the build.
 
 ## Before you say it is done
 

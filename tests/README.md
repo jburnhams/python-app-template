@@ -1,6 +1,6 @@
 # Python tests
 
-pytest 8, pytest-cov, **hypothesis**, **pytest-randomly**, **pytest-timeout**, pytest-xdist, diff-cover (`pip install -r requirements-test.txt`). The web tests are in `web/tests` (see `web/tests/README.md`).
+pytest 8, pytest-cov, **hypothesis**, **pytest-randomly**, **pytest-timeout**, pytest-xdist, diff-cover (`uv sync` installs the `dev` dependency group). The web tests are in `web/tests` (see `web/tests/README.md`).
 
 This file holds only what **both** Python suites share, and it is rarely edited. Each suite keeps its own notes so that parallel work on them does not collide:
 
@@ -11,12 +11,12 @@ This file holds only what **both** Python suites share, and it is rarely edited.
 | Web (`web/tests/`) | [`web/tests/README.md`](../web/tests/README.md) |
 
 ```
-pytest tests/unit --cov                    # unit suite + coverage (what CI gates on: fail_under in pyproject.toml, only ratchets up)
-pytest tests/unit -n auto                  # in parallel
-pytest tests/integration -n auto           # the CLI and HTTP API end-to-end
-pytest -p randomly -p "randomly_seed=N"    # reproduce a failure from a CI run (the seed is in the header of every run)
-pytest tests/unit/test_x.py -k name        # one test
-ruff check src tests
+uv run pytest tests/unit --cov                    # unit suite + coverage (what CI gates on: fail_under in pyproject.toml, only ratchets up)
+uv run pytest tests/unit -n auto                  # in parallel
+uv run pytest tests/integration -n auto           # the CLI and HTTP API end-to-end
+uv run pytest -p randomly -p "randomly_seed=N"    # reproduce a failure from a CI run (the seed is in the header of every run)
+uv run pytest tests/unit/test_x.py -k name        # one test
+scripts/check                              # lint, format, types, lockfile, unit tests: the gate
 diff-cover coverage.xml --compare-branch origin/main    # after `--cov-report=xml`: coverage of just the lines your change touches
 ```
 
@@ -40,7 +40,7 @@ CI (`.github/workflows/`): `unit.yml` (lint, unit tests with coverage on Linux f
 | Notes | `tests/unit/README.md` | `tests/integration/README.md` |
 | Coverage gate | `fail_under` in `pyproject.toml` (the only writer) | none: integration coverage is informational |
 
-Don't edit `tests/README.md` (this file), `AGENTS.md`, `CLAUDE.md`, `requirements-test.txt` or `.github/workflows/*` unless the task cannot be done without it; say why in the PR.
+Don't edit `tests/README.md` (this file), `AGENTS.md`, `CLAUDE.md`, `pyproject.toml` (dependency groups) or `.github/workflows/*` unless the task cannot be done without it; say why in the PR.
 
 ## Shared conventions
 

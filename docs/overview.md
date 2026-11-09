@@ -7,7 +7,7 @@ Provide a clean, minimal starting point for full-stack local-first Python + Reac
 ## 2. Architecture
 
 - **Python CLI and HTTP server (`src/app/`)**:
-  - `cli.py`: command-line interface (`doctor`, `hello`, `messages`, `set`, `serve`), invoked via `./app` (POSIX) or `app.cmd` (Windows) without needing to activate `.venv` manually.
+  - `cli.py`: command-line interface (`doctor`, `hello`, `messages`, `set`, `serve`), invoked as `uv run app` (the `app` console script from `pyproject.toml`; `./app` and `app.cmd` wrap it).
   - `server/app.py`: FastAPI application serving JSON endpoints under `/api/*` and the built React single-page app at `/` (falling back to `server/landing.html` when `web/` has not been built yet).
   - `settings.py`: persistent user configuration in `~/.app/settings.json` (`APP_HOME` override) with atomic file writes.
   - `oslib.py`: cross-platform primitives (file locks, process liveness, process tree termination, priority, CLI command builder) isolating POSIX vs Windows differences in one place.

@@ -8,6 +8,8 @@ Every other path serves the web app (`src/app/server/static/index.html` when bui
 so a reload or a shared link to /settings?tab=appearance opens that screen: the app routes in the browser (React Router)."""
 
 import os
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
@@ -30,10 +32,10 @@ class MessageIn(BaseModel):
     greeting: str | None = None
 
 
-def create_app():
+def create_app() -> FastAPI:
     app = FastAPI(title="python-app-template", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
-    def guard(fn, *a, **kw):
+    def guard(fn: Callable[..., Any], *a: Any, **kw: Any) -> Any:
         try:
             return fn(*a, **kw)
         except greet.GreetingError as e:
@@ -55,7 +57,7 @@ def create_app():
     def put_settings(s: SettingsIn):
         if s.data_dir is not None and not os.path.isabs(os.path.expanduser(s.data_dir)):
             raise HTTPException(400, "the data folder must be an absolute path")
-        changes = {}
+        changes: dict[str, str] = {}
         if s.data_dir is not None:
             changes["data_dir"] = s.data_dir
         if s.greeting is not None:
@@ -132,7 +134,7 @@ def with_base(html: str, path: str) -> str:
     return html.replace("<head>", "<head>" + tag, 1) if "<head>" in html else tag + html
 
 
-def main(argv=None):
+def main(argv: Sequence[str] | None = None) -> None:
     import argparse
 
     import uvicorn

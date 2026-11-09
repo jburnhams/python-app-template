@@ -4,13 +4,14 @@ import argparse
 import importlib
 import json
 import sys
+from collections.abc import Sequence
 
 from app import __version__, greet, settings
 
 CHECKS = (("fastapi", "fastapi"), ("uvicorn", "uvicorn"), ("pydantic", "pydantic"))
 
 
-def doctor(args):
+def doctor(args: argparse.Namespace) -> int:
     ok = True
     print(f"app {__version__}, python {sys.version.split()[0]}")
     for label, mod in CHECKS:
@@ -23,7 +24,7 @@ def doctor(args):
     return 0 if ok else 1
 
 
-def cmd_hello(args):
+def cmd_hello(args: argparse.Namespace) -> int:
     try:
         rec = (
             greet.add_message(args.name, args.greeting)
@@ -39,7 +40,7 @@ def cmd_hello(args):
     return 0
 
 
-def cmd_messages(args):
+def cmd_messages(args: argparse.Namespace) -> int:
     if args.clear:
         res = greet.clear_messages()
         print(json.dumps(res) if args.json else f"cleared {res['cleared']} message(s)")
@@ -56,7 +57,7 @@ def cmd_messages(args):
     return 0
 
 
-def cmd_set(args):
+def cmd_set(args: argparse.Namespace) -> int:
     if args.value is None:
         print(f"{args.key} = {settings.all_settings().get(args.key)}")
         return 0
@@ -68,14 +69,14 @@ def cmd_set(args):
     return 0
 
 
-def cmd_serve(args):
+def cmd_serve(args: argparse.Namespace) -> int:
     from app.server import app as server_app
 
     server_app.main(["--host", args.host, "--port", str(args.port)])
     return 0
 
 
-def main(argv=None):
+def main(argv: Sequence[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="app")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("doctor", help="check the environment").set_defaults(fn=doctor)

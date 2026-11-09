@@ -1,3 +1,5 @@
+# pyright: basic, reportAttributeAccessIssue=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportDeprecated=false
+# (relaxed for this file only: the Windows branches use msvcrt and ctypes.windll, which the Linux type stubs lack. Every other file is strict.)
 """OS differences in one place: file locks, process liveness and termination, priority, and how to start the CLI.
 
 POSIX (macOS, Linux) uses fcntl, os.kill and os.nice; Windows uses msvcrt, the Win32 API through ctypes and taskkill. Other modules should call these
@@ -8,13 +10,15 @@ import os
 import subprocess
 import sys
 import time
+from collections.abc import Iterator
+from typing import IO, Any
 
 WIN = sys.platform == "win32"
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 @contextlib.contextmanager
-def file_lock(f):
+def file_lock(f: IO[Any]) -> Iterator[None]:
     """Exclusive lock on an open file, held for the duration of the block (other processes block until it is released)."""
     if WIN:
         import msvcrt
@@ -42,10 +46,10 @@ def file_lock(f):
             fcntl.flock(f, fcntl.LOCK_UN)
 
 
-def pid_alive(pid):
+def pid_alive(pid: object) -> bool:
     """Is that process still running?"""
     try:
-        pid = int(pid)
+        pid = int(pid)  # type: ignore[arg-type]
     except (TypeError, ValueError):
         return False
     if pid <= 0:
@@ -74,7 +78,7 @@ def pid_alive(pid):
         return False
 
 
-def kill_tree(pid, sig=15):
+def kill_tree(pid: int | str, sig: int = 15) -> None:
     """Terminate a worker and every process it started; errors are ignored."""
     if WIN:
         with contextlib.suppress(OSError):
@@ -90,7 +94,7 @@ def kill_tree(pid, sig=15):
         os.kill(int(pid), sig)
 
 
-def lower_priority(nice=19):
+def lower_priority(nice: int = 19) -> None:
     """Run this process at lower CPU priority (nice value on POSIX, below-normal/idle class on Windows). Children inherit it."""
     if WIN:
         import ctypes
@@ -104,12 +108,12 @@ def lower_priority(nice=19):
         os.nice(nice)
 
 
-def venv_python(venv):
+def venv_python(venv: str) -> str:
     """The interpreter of a virtual environment: bin/python on POSIX, Scripts\\python.exe on Windows."""
     return os.path.join(venv, "Scripts", "python.exe") if WIN else os.path.join(venv, "bin", "python")
 
 
-def cli_command():
+def cli_command() -> list[str]:
     """Command prefix that starts the app CLI with the interpreter running this process (works on POSIX and Windows, with or without a .venv)."""
     os.environ["PYTHONPATH"] = os.path.join(ROOT_DIR, "src") + os.pathsep + os.environ.get("PYTHONPATH", "")
     os.environ.setdefault("PYTHONWARNINGS", "ignore")

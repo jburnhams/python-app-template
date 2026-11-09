@@ -4,6 +4,7 @@ import contextlib
 import os
 import platform
 import shutil
+from typing import Any
 
 from app import __version__, greet, settings
 
@@ -18,7 +19,7 @@ def folder_bytes(path: str) -> int:
     return total
 
 
-def status() -> dict:
+def status() -> dict[str, Any]:
     """A snapshot for the System page. Sizes are bytes; the web app formats them."""
     d = settings.data_dir()
     du = shutil.disk_usage(d)

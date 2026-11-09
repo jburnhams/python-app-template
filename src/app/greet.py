@@ -3,15 +3,19 @@
 import json
 import os
 from datetime import UTC, datetime
+from typing import Any, cast
 
 from app import oslib, settings
+
+# A greeting record as stored in messages.json and returned by the API: id, name, greeting, message, created.
+Record = dict[str, Any]
 
 
 class GreetingError(ValueError):
     """Raised when a greeting request is invalid."""
 
 
-def format_greeting(name: str = "World", greeting: str | None = None) -> dict:
+def format_greeting(name: str = "World", greeting: str | None = None) -> Record:
     """Format a greeting for `name` using `greeting` (or the configured default)."""
     clean_name = (name or "").strip() or "World"
     clean_greeting = (greeting or "").strip() or settings.greeting()
@@ -26,7 +30,7 @@ def _store_path() -> str:
     return os.path.join(settings.data_dir(), "messages.json")
 
 
-def list_messages() -> list[dict]:
+def list_messages() -> list[Record]:
     """Return the recorded greetings from `<data_dir>/messages.json` (newest first)."""
     p = _store_path()
     if not os.path.exists(p):
@@ -36,10 +40,10 @@ def list_messages() -> list[dict]:
             data = json.load(f)
     except (OSError, ValueError):
         return []
-    return data if isinstance(data, list) else []
+    return cast("list[Record]", data) if isinstance(data, list) else []
 
 
-def add_message(name: str = "World", greeting: str | None = None) -> dict:
+def add_message(name: str = "World", greeting: str | None = None) -> Record:
     """Create and persist a greeting entry; returns the created record."""
     rec = format_greeting(name, greeting)
     lock_path = _store_path() + ".lock"
@@ -72,14 +76,14 @@ def _last_id() -> int:
         return 0
 
 
-def _write(items: list[dict]) -> None:
+def _write(items: list[Record]) -> None:
     tmp = _store_path() + ".tmp"
     with open(tmp, "w", encoding="utf8") as f:
         json.dump(items, f, indent=1)
     os.replace(tmp, _store_path())
 
 
-def page_messages(after: int | None = None, limit: int = 20) -> dict:
+def page_messages(after: int | None = None, limit: int = 20) -> dict[str, Any]:
     """One page of the log, newest first: the greetings after the one with id `after` (the last one the client holds), and whether there are more.
 
     A cursor, not an offset: greetings removed between pages would make an offset skip the ones that moved up to fill the gap. Ids grow with time, so `after` still works when that greeting has itself been removed."""
@@ -88,7 +92,7 @@ def page_messages(after: int | None = None, limit: int = 20) -> dict:
     return {"messages": rest[:limit], "has_more": len(rest) > limit}
 
 
-def remove_message(message_id: int) -> dict | None:
+def remove_message(message_id: int) -> Record | None:
     """Remove one greeting by id; returns it, or None when there is no such greeting."""
     lock_path = _store_path() + ".lock"
     os.makedirs(settings.data_dir(), exist_ok=True)
@@ -100,7 +104,7 @@ def remove_message(message_id: int) -> dict | None:
     return found
 
 
-def clear_messages() -> dict:
+def clear_messages() -> dict[str, int]:
     """Remove all recorded greetings; returns `{cleared: count}`."""
     lock_path = _store_path() + ".lock"
     os.makedirs(settings.data_dir(), exist_ok=True)

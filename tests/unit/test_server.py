@@ -100,3 +100,11 @@ def test_settings_roundtrip_and_server_main(client, tmp_path, monkeypatch):
     monkeypatch.setattr(uvicorn, "run", lambda app, host, port, log_level: runs.append((host, port, log_level)))
     server_app.main(["--host", "127.0.0.1", "--port", "8360"])
     assert runs == [("127.0.0.1", 8360, "warning")]
+
+
+def test_settings_put_with_one_field_or_none_changes_only_what_was_sent(client, tmp_path, monkeypatch):
+    monkeypatch.delenv("APP_DATA", raising=False)
+    new_dir = str(tmp_path / "data")
+    assert client.put("/api/settings", json={"data_dir": new_dir}).json()["data_dir"] == new_dir
+    assert client.put("/api/settings", json={"greeting": "Hey"}).json() == {"data_dir": new_dir, "greeting": "Hey"}
+    assert client.put("/api/settings", json={}).json() == {"data_dir": new_dir, "greeting": "Hey"}

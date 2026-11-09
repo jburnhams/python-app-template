@@ -1,4 +1,5 @@
 """What the web app's System page reports (GET /api/system): versions, where the data lives, and how full its disk is."""
+
 import os
 import platform
 import shutil
@@ -11,8 +12,10 @@ def folder_bytes(path: str) -> int:
     total = 0
     for root, _dirs, files in os.walk(path):
         for name in files:
-            try: total += os.path.getsize(os.path.join(root, name))
-            except OSError: pass
+            try:
+                total += os.path.getsize(os.path.join(root, name))
+            except OSError:
+                pass
     return total
 
 
@@ -23,7 +26,7 @@ def status() -> dict:
     return dict(
         version=__version__,
         python=platform.python_version(),
-        platform=f'{platform.system()} {platform.release()}'.strip(),
+        platform=f"{platform.system()} {platform.release()}".strip(),
         data_dir=d,
         messages=len(greet.list_messages()),
         data_bytes=folder_bytes(d),

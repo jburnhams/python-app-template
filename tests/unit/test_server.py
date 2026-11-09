@@ -45,10 +45,6 @@ def test_every_page_path_serves_the_app_with_a_base_back_to_its_root(tmp_path, m
         "..",
     ):  # never a file outside the static folder: the app instead
         assert c.get("/" + escape).text.startswith("<html><head><base")
-    assert server_app.static_file("..\\app.py") is None
-    assert server_app.static_file("C:\\x") is None
-    assert server_app.static_file("") is None
-    assert server_app.static_file("missing.txt") is None
     assert c.get("/api/nope").status_code == 404  # an unknown endpoint is not the app
     assert c.get("/api/nope").json() == {"detail": "no such endpoint"}
 

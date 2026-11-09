@@ -4,6 +4,13 @@ Newest first, grouped by day. One entry per change, in the same commit or PR as 
 
 ## 2026-11-09
 
+**Generic deployment notes and a systemd unit example (branch `claude/project-thread-iw7199`)**
+A Docker image was dropped from the plan because apps are not deployed that way. These files are deliberately free of machine-specific details.
+
+- `deploy/app.service`: **new**. Example systemd user unit running `uv run --locked --no-dev app serve`.
+- `docs/deploying.md`: **new**. Build, install, run, reverse-proxy and how to keep a service file in step with the repo.
+- `AGENTS.md`: points to them; the stale `setup_env` mention is gone (corrects the earlier line left behind by the uv change).
+
 **Move the Python side to uv, typed strict, one gate (branch `claude/project-thread-iw7199`)**
 Asked for an evaluation of this template against current best practice; the tooling gaps it found are closed here. Behaviour of the app is unchanged.
 

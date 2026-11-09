@@ -14,3 +14,6 @@ src/app/server/static/
 web/coverage/
 data/
 out/
+web/storybook-static/
+web/dist-visual/
+web/tests/visual/output/

@@ -45,3 +45,33 @@ def test_list_messages_handles_corrupt_or_non_list_file():
     assert greet.list_messages() == []
     with open(p, 'w', encoding='utf8') as f: f.write('{"not": "a list"}')
     assert greet.list_messages() == []
+
+
+def test_ids_are_never_reused_after_a_removal():
+    a, b = greet.add_message('Alice'), greet.add_message('Bob')
+    assert greet.remove_message(b['id']) == b
+    c = greet.add_message('Cy')
+    assert c['id'] == 3 and [m['id'] for m in greet.list_messages()] == [3, 1]
+    assert greet.remove_message(a['id']) == a
+    assert greet.remove_message(99) is None
+    assert [m['name'] for m in greet.list_messages()] == ['Cy']
+    greet.remove_message(c['id'])                                    # the newest goes too: the next id still moves on
+    assert greet.add_message('Di')['id'] == 4
+
+
+def test_a_damaged_id_counter_falls_back_to_the_log():
+    greet.add_message('Alice'); greet.add_message('Bob')
+    with open(os.path.join(settings.data_dir(), 'messages.seq'), 'w', encoding='utf8') as f: f.write('garbage')
+    assert greet.add_message('Cy')['id'] == 3
+
+
+def test_page_messages_goes_after_the_cursor_newest_first():
+    for n in ('a', 'b', 'c', 'd', 'e'): greet.add_message(n)      # ids 1..5; the log is 5, 4, 3, 2, 1
+    first = greet.page_messages(limit=2)
+    assert [m['id'] for m in first['messages']] == [5, 4] and first['has_more'] is True
+    assert [m['id'] for m in greet.page_messages(after=4, limit=2)['messages']] == [3, 2]
+    last = greet.page_messages(after=2, limit=2)
+    assert [m['id'] for m in last['messages']] == [1] and last['has_more'] is False
+    greet.remove_message(3)                                          # the cursor still works when its own greeting has gone
+    assert [m['id'] for m in greet.page_messages(after=3, limit=5)['messages']] == [2, 1]
+    assert greet.page_messages(after=1) == dict(messages=[], has_more=False)

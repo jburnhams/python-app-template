@@ -21,8 +21,34 @@ def test_landing_page_and_built_static_index(tmp_path, monkeypatch):
     (static / 'assets' / 'main.js').write_text('console.log(1)', encoding='utf8')
     monkeypatch.setattr(server_app, 'STATIC', str(static))
     c2 = TestClient(create_app())
-    assert c2.get('/').text == '<h1>built react app</h1>'
+    assert c2.get('/').text == '<base href="./"><h1>built react app</h1>'
     assert 'console.log(1)' in c2.get('/assets/main.js').text
+
+
+def test_every_page_path_serves_the_app_with_a_base_back_to_its_root(tmp_path, monkeypatch):
+    static = tmp_path / 'static'; static.mkdir()
+    (static / 'index.html').write_text('<html><head><title>t</title></head></html>', encoding='utf8')
+    (static / 'favicon.svg').write_text('<svg/>', encoding='utf8')
+    monkeypatch.setattr(server_app, 'STATIC', str(static))
+    c = TestClient(create_app())
+    assert c.get('/settings?tab=appearance').text == '<html><head><base href="./"><title>t</title></head></html>'
+    assert '<base href="../">' in c.get('/log/2026').text                # one level down: one step back up
+    assert c.get('/favicon.svg').text == '<svg/>'
+    assert c.get('/api/nope').status_code == 404                          # an unknown endpoint is not the app
+    assert c.get('/api/nope').json() == dict(detail='no such endpoint')
+
+
+def test_system_paging_and_removing_one_greeting(client):
+    for n in ('a', 'b', 'c'): client.post('/api/messages', json=dict(name=n))
+    s = client.get('/api/system').json()
+    assert s['messages'] == 3 and s['disk']['total'] > 0 and s['data_bytes'] > 0
+    page = client.get('/api/messages/page', params=dict(limit=2)).json()
+    assert [m['name'] for m in page['messages']] == ['c', 'b'] and page['has_more'] is True
+    assert client.get('/api/messages/page', params=dict(after=2, limit=2)).json() == dict(messages=[client.get('/api/messages').json()[2]], has_more=False)
+    assert client.get('/api/messages/page', params=dict(limit=0)).status_code == 422
+    assert client.delete('/api/messages/2').json()['name'] == 'b'
+    assert client.delete('/api/messages/2').status_code == 404
+    assert [m['name'] for m in client.get('/api/messages').json()] == ['c', 'a']
 
 
 def test_hello_and_messages_lifecycle(client):

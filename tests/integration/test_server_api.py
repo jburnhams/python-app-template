@@ -21,3 +21,19 @@ def test_settings_changes_affect_subsequent_greetings(client):
     assert client.put('/api/settings', json=dict(greeting='Bonjour')).json()['greeting'] == 'Bonjour'
     assert client.get('/api/hello', params=dict(name='Monde')).json()['message'] == 'Bonjour, Monde!'
     assert client.put('/api/settings', json=dict(data_dir='relative')).status_code == 400
+
+
+def test_one_greeting_removed_over_http_is_gone_from_the_cli_and_the_log(client, cli):
+    for n in ('Ann', 'Ben', 'Cat'): client.post('/api/messages', json=dict(name=n))
+    assert client.delete('/api/messages/2').status_code == 200
+    out = cli('messages').stdout
+    assert 'Hello, Ben!' not in out and 'Hello, Ann!' in out and 'Hello, Cat!' in out
+    assert client.post('/api/messages', json=dict(name='Dee')).json()['id'] == 4
+    page = client.get('/api/messages/page', params=dict(limit=2)).json()
+    assert [m['name'] for m in page['messages']] == ['Dee', 'Cat'] and page['has_more'] is True
+    assert client.get('/api/system').json()['messages'] == 3
+
+
+def test_a_reload_on_any_screen_gets_the_app(client):
+    r = client.get('/settings', params=dict(tab='appearance'))
+    assert r.status_code == 200 and '<base href="./">' in r.text

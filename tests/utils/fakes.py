@@ -1,4 +1,4 @@
-"""Test doubles for the outside world: HTTP (urllib) and subprocesses. Use through the fixtures in tests/conftest.py (`fake_urlopen`, `fake_popen`, `fake_run`)."""
+"""Test doubles for the outside world: HTTP (urllib) and subprocesses. A LAST RESORT, for quick unit tests of many cases where speed matters and only for a real external edge; prefer the real thing (the `http_server` fixture for HTTP, the actual program for subprocesses). See AGENTS.md (Testing). Use through the fixtures in tests/conftest.py (`fake_urlopen`, `fake_popen`, `fake_run`)."""
 
 import io
 import json

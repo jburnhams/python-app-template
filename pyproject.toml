@@ -64,8 +64,11 @@ line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "C4", "PT", "S"]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "C4", "PT", "S", "TID"]
 ignore = ["E501"]        # the formatter wraps code; long comments and docstrings stay (the house style comments the why)
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest.importorskip".msg = "Do not skip when a dependency is missing: install it (locally and in CI) and let the test fail if it is not there. A deliberate skip is a marker with a reason, see AGENTS.md (Testing)."
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S104", "S105", "S106", "S108", "S603", "S607"]    # asserts, fake secrets, tmp paths, subprocess of our own CLI

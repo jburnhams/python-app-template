@@ -4,6 +4,14 @@ Newest first, grouped by day. One entry per change, in the same commit or PR as 
 
 ## 2026-11-09
 
+**Testing policy: real code over mocks (branch `claude/project-thread-iw7199`)**
+Asked to steer tests away from mocks towards real HTTP, embedded databases and installed tools, and to make skipping deliberate.
+
+- `AGENTS.md`: **new** Testing policy section (real by default; mocks only for true externals in quick many-case unit tests; install ffmpeg and the like instead of mocking; no silent skips, a skip is a marker with a reason and a switch; machine-heavy tests are marked and run where the machine is).
+- `tests/utils/http_server.py`, `tests/unit/test_http_server.py`: **new**. A real loopback HTTP server scripted per test (`http_server` fixture in `tests/conftest.py`); a request no route answers fails the test at teardown.
+- `tests/utils/fakes.py`: docstring marks the doubles as a last resort. `tests/README.md`: layout notes point to the policy.
+- `pyproject.toml`: ruff `TID` rules selected, `pytest.importorskip` banned with the reason.
+
 **AGENTS.md reorganised as the basis for apps made from the template (branch `claude/project-thread-iw7199`)**
 Asked to make the agent instructions suitable as the starting point for future apps, and to point database work at the shared database project.
 

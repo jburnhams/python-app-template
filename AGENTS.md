@@ -33,12 +33,22 @@ A Python backend (FastAPI + CLI) and a React frontend built on [strata-react](ht
 - Python coverage is calculated from the unit suite only (`fail_under` in `pyproject.toml`).
 - Style: pytest style tests (`def test_...` with `assert`; use `monkeypatch`/`tmp_path` instead of patching globals by hand).
 
+## Testing policy
+
+Prefer real code over mocks. A test that runs the real thing finds the bugs that matter; a mock only proves the code agrees with the test.
+
+- **Real by default**: real HTTP requests (against a real local server: the `http_server` fixture in `tests/utils/http_server.py`, or `uvicorn` on loopback for the app itself), real embedded databases (SQLite, or the Postgres service container, via the database project's `db_session` fixtures; see Database), real files in `tmp_path`, real subprocesses. In the web app that means MSW answering real `fetch` calls, never a stubbed `fetch` or a mocked module.
+- **Mocks and fakes are the exception**: use one only for a true external (a paid or remote service, hardware, the clock) and only in quick unit tests that cover many cases where speed is the point. Never mock your own modules or the database. Even then, keep one test of the same path against the real thing.
+- **Install what the tests need**: CI runners can have software installed. If code calls `ffmpeg`, install it (locally and in the workflow) and run it; do not mock it or skip when it is missing. Add the install to the workflow and say so in the README.
+- **No silent skips, no swallowed errors**: a test must not pass or skip because something was missing or an exception was caught. `pytest.importorskip` is banned (ruff). A test is skipped only deliberately: a marker or `skipif` with a **reason** and an explicit switch, for example a 12 GB model that is too large for CI is `@pytest.mark.skipif(not os.environ.get("RUN_LARGE_MODEL"), reason="needs the 12 GB model; set RUN_LARGE_MODEL=1")` and runs on the machine that has it. Skips show in the summary (`-ra`); any new skip is mentioned in the PR.
+- **Where tests need a lot of machine** (GPU, large models), mark them (`slow`, `gpu`), run them where that machine exists, and keep the marker documented in `tests/README.md`.
+
 ## Python tests
 
 - Tests live under `tests/`, grouped by type:
   - `tests/unit/`: fast, isolated tests of pure logic and mocked boundaries (synthetic data, fakes). No external processes or network.
   - `tests/integration/`: end-to-end tests that run the CLI (in-process and as a subprocess) and the FastAPI HTTP API over real on-disk state.
-  - `tests/utils/`: shared helpers (`fakes.py` for HTTP/subprocess doubles). `tests/conftest.py` holds shared fixtures and makes every suite hermetic (isolated home and data dir, no network).
+  - `tests/utils/`: shared helpers (`http_server.py`, a real scripted loopback HTTP server; `fakes.py`, last-resort doubles for the outside world). `tests/conftest.py` holds shared fixtures and makes every suite hermetic (isolated home and data dir, no network).
 - Read `tests/README.md` before writing any Python test: fixtures, conventions, file-ownership rules and the per-module coverage ledger.
 
 ## Web

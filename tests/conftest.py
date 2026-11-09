@@ -78,3 +78,14 @@ def fake_run(monkeypatch):
     monkeypatch.setattr(subprocess, "run", f)
     monkeypatch.setattr(subprocess, "check_output", f.check_output)
     return f
+
+
+@pytest.fixture
+def http_server():
+    """A real HTTP server on loopback for code that makes outbound requests (see tests/utils/http_server.py). Fails the test at teardown if a request reached no route."""
+    import http_server as hs
+
+    state = hs.start()
+    yield state
+    hs.stop(state)
+    assert not state.unexpected, f"requests no route answered: {[(r.method, r.path) for r in state.unexpected]}"

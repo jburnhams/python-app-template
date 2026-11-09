@@ -67,8 +67,8 @@ export const api = {
 
 // The server's own limits (src/app/greet.py format_greeting, server put_settings), checked here
 // too so a person sees the reason under the field before sending. The server's 400 carries the
-// same sentence in its body, but fetchJson's HttpError does not keep the body (strata-react issue
-// noted in the README), so without these the field could only say "refused (400)".
+// same sentence in its body, but fetchJson's HttpError does not keep the body (jburnhams/strata-react#42),
+// so without these the field could only say "refused (400)".
 export const limits = { name: 120, greeting: 60 } as const
 
 /** What is wrong with a greeting's name or word, in a sentence, or undefined when it can be sent. */

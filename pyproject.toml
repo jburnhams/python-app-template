@@ -30,6 +30,7 @@ dev = [
     "diff-cover",
     "ruff",
     "pyright",
+    "ty",
 ]
 
 [tool.hatch.build.targets.wheel]

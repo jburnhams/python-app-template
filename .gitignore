@@ -17,3 +17,4 @@ out/
 web/storybook-static/
 web/dist-visual/
 web/tests/visual/output/
+dist/

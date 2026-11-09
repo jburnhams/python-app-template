@@ -10,15 +10,15 @@ import os
 import subprocess
 import sys
 import time
-from collections.abc import Iterator
-from typing import IO, Any
+from collections.abc import Generator
+from typing import IO, Any, cast
 
 WIN = sys.platform == "win32"
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 @contextlib.contextmanager
-def file_lock(f: IO[Any]) -> Iterator[None]:
+def file_lock(f: IO[Any]) -> Generator[None]:
     """Exclusive lock on an open file, held for the duration of the block (other processes block until it is released)."""
     if WIN:
         import msvcrt
@@ -49,7 +49,7 @@ def file_lock(f: IO[Any]) -> Iterator[None]:
 def pid_alive(pid: object) -> bool:
     """Is that process still running?"""
     try:
-        pid = int(pid)  # type: ignore[arg-type]
+        pid = int(cast("Any", pid))
     except (TypeError, ValueError):
         return False
     if pid <= 0:

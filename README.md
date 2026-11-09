@@ -1,16 +1,16 @@
 # python-app-template
 
-A full-stack Python + React project template extracted from [strata-360](https://github.com/jburnhams/strata-360) and [strata-stills](https://github.com/jburnhams/strata-stills). Includes a FastAPI backend and CLI (`src/app/`), a React 19 + TypeScript frontend (`web/`) built on [strata-react](https://github.com/jburnhams/strata-react) that builds directly into the Python package, hermetic unit and integration test suites (pytest + hypothesis on Python, Vitest + Testing Library + MSW on web), Storybook, screenshot tests in Chromium (`strata-visual`), ratcheting coverage gates, and multi-OS GitHub Actions CI.
+A full-stack Python + React project template extracted from [strata-360](https://github.com/jburnhams/strata-360) and [strata-stills](https://github.com/jburnhams/strata-stills). Includes a FastAPI backend and CLI (`src/app/`), a React 19 + TypeScript frontend (`web/`) built on [strata-react](https://github.com/jburnhams/strata-react) that builds directly into the Python package, hermetic unit and integration test suites (uv run pytest + hypothesis on Python, Vitest + Testing Library + MSW on web), Storybook, screenshot tests in Chromium (`strata-visual`), ratcheting coverage gates, and multi-OS GitHub Actions CI.
 
 The web app is meant to be read as well as run: each screen in `web/src/screens/` opens with the question it answers and the strata-react patterns it shows (loading, empty and error states; undoable removal; bulk selection; a cursor-paged log; a polled status page; settings with tabs in the URL; light and dark).
 
 ## Quick start
 
 ```bash
-scripts/setup_env.sh                 # macOS / Linux (or scripts\setup_env.ps1 on Windows)
-./app doctor                         # check the environment
-./app hello World                    # CLI hello world
-./app serve                          # starts the FastAPI + React app on http://127.0.0.1:8360/
+uv sync                              # creates .venv from uv.lock (install uv: https://docs.astral.sh/uv/)
+uv run app doctor                         # check the environment
+uv run app hello World                    # CLI hello world
+uv run app serve                          # starts the FastAPI + React app on http://127.0.0.1:8360/
 ```
 
 For hot-reload frontend development, run `./app serve` in one terminal and `cd web && npm run dev` in another (Vite proxies `/api` to `127.0.0.1:8360`).
@@ -35,10 +35,10 @@ For hot-reload frontend development, run `./app serve` in one terminal and `cd w
 ## Tests
 
 ```bash
-pip install -r requirements-test.txt
-pytest tests/unit --cov                 # unit tests + coverage (CI gates on fail_under in pyproject.toml)
-pytest tests/integration -n auto        # CLI and HTTP API end-to-end
-ruff check src tests
+uv sync                                 # runtime + dev dependencies from uv.lock
+uv run pytest tests/unit --cov                 # unit tests + coverage (CI gates on fail_under in pyproject.toml)
+uv run pytest tests/integration -n auto        # CLI and HTTP API end-to-end
+scripts/check                           # the whole gate: lockfile, ruff lint + format, pyright strict, ty, unit tests + coverage
 cd web && npm run test:coverage:gate    # web unit + jsdom integration tests against coverage-floor.json
 cd web && npm run storybook             # every screen in every server state, on :6006
 cd web && npm run test:visual           # build the app and Storybook, then screenshot both light and dark against tests/visual/baselines/

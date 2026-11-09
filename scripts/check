@@ -1,0 +1,4 @@
+#!/bin/bash
+# The one gate (see scripts/check.py). Called by git hooks and by hand: scripts/check [--fast|--fix]
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec uv run --project "$DIR/.." python "$DIR/check.py" "$@"

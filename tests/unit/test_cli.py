@@ -1,5 +1,8 @@
-import importlib, json
+import importlib
+import json
+
 import pytest
+
 from app import cli
 
 

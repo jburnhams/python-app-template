@@ -111,6 +111,8 @@ def with_base(html: str, path: str) -> str:
 
 
 def main(argv=None):
-    import argparse, uvicorn
+    import argparse
+
+    import uvicorn
     a = argparse.ArgumentParser(); a.add_argument('--host', default='127.0.0.1'); a.add_argument('--port', type=int, default=8360); a = a.parse_args(argv)
     print(f'data folder: {settings.data_dir()}\nhttp://{a.host}:{a.port}/'); uvicorn.run(create_app(), host=a.host, port=a.port, log_level='warning')

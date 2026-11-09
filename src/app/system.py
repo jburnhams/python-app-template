@@ -1,5 +1,7 @@
 """What the web app's System page reports (GET /api/system): versions, where the data lives, and how full its disk is."""
-import os, platform, shutil
+import os
+import platform
+import shutil
 
 from app import __version__, greet, settings
 

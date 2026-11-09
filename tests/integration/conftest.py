@@ -1,5 +1,9 @@
 """Integration-suite fixtures: the CLI (in-process and as a real process) and the HTTP API over real on-disk files."""
-import contextlib, io, os, subprocess, sys
+import contextlib
+import io
+import os
+import subprocess
+import sys
 from dataclasses import dataclass
 
 import pytest

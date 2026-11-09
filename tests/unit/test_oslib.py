@@ -1,5 +1,10 @@
 """OS helpers (app.oslib): file lock, process liveness, termination, priority, CLI command."""
-import os, subprocess, sys, time, types
+import os
+import subprocess
+import sys
+import time
+import types
+
 from app import oslib
 
 

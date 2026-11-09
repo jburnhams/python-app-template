@@ -1,6 +1,7 @@
 """Hello-world domain logic and persistent message log (`<data_dir>/messages.json`, newest first)."""
-import json, os
-from datetime import datetime, timezone
+import json
+import os
+from datetime import UTC, datetime
 
 from app import oslib, settings
 
@@ -41,7 +42,7 @@ def add_message(name: str = 'World', greeting: str | None = None) -> dict:
         items = list_messages()
         # Ids are never reused: the count drops when a greeting is removed, and so does the largest id when the newest one goes. The web app hides a removed row by its id
         # until the removal is committed (useUndoable), so a new greeting under a removed id would vanish with it. `messages.seq` remembers the last id handed out.
-        entry = dict(id=max(_last_id(), max((m.get('id', 0) for m in items), default=0)) + 1, **rec, created=datetime.now(timezone.utc).isoformat())
+        entry = dict(id=max(_last_id(), max((m.get('id', 0) for m in items), default=0)) + 1, **rec, created=datetime.now(UTC).isoformat())
         items.insert(0, entry)
         _write(items)
         with open(_seq_path(), 'w', encoding='utf8') as f: f.write(str(entry['id']))

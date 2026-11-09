@@ -4,7 +4,8 @@
   greeting   default greeting word used by `greet.py` (default: 'Hello').
 
 The environment variables APP_DATA and APP_GREETING override the file (handy for tests and one-off runs)."""
-import json, os
+import json
+import os
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DEFAULT_DATA_DIR = os.path.join(REPO, 'data')

@@ -2,7 +2,11 @@
 
 POSIX (macOS, Linux) uses fcntl, os.kill and os.nice; Windows uses msvcrt, the Win32 API through ctypes and taskkill. Other modules should call these
 instead of importing fcntl or calling os.kill(pid, 0) (on Windows that would terminate the process)."""
-import contextlib, os, subprocess, sys, time
+import contextlib
+import os
+import subprocess
+import sys
+import time
 
 WIN = sys.platform == 'win32'
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))

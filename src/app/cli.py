@@ -1,5 +1,8 @@
 """Command line: `doctor` checks the environment, `hello` prints or records a greeting, `serve` starts the web server."""
-import argparse, importlib, json, sys
+import argparse
+import importlib
+import json
+import sys
 
 from app import __version__, greet, settings
 
@@ -10,7 +13,7 @@ def doctor(args):
     ok = True; print(f'app {__version__}, python {sys.version.split()[0]}')
     for label, mod in CHECKS:
         try: m = importlib.import_module(mod); print(f'  ok       {label} {getattr(m, "__version__", "")}'.rstrip())
-        except ImportError: ok = False; print(f'  MISSING  {label}: pip install -r requirements.txt')
+        except ImportError: ok = False; print(f'  MISSING  {label}: uv sync')
     return 0 if ok else 1
 
 

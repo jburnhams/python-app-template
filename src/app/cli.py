@@ -1,27 +1,19 @@
 """Command line: `doctor` checks the environment, `hello` prints or records a greeting, `serve` starts the web server."""
 
 import argparse
-import importlib
 import json
 import sys
 from collections.abc import Sequence
 
+from strata_python import cli as shared
+
 from app import __version__, greet, settings
 
-CHECKS = (("fastapi", "fastapi"), ("uvicorn", "uvicorn"), ("pydantic", "pydantic"))
 
+def run_server(host: str, port: int) -> None:
+    from app.server import app as server_app
 
-def doctor(args: argparse.Namespace) -> int:
-    ok = True
-    print(f"app {__version__}, python {sys.version.split()[0]}")
-    for label, mod in CHECKS:
-        try:
-            m = importlib.import_module(mod)
-            print(f"  ok       {label} {getattr(m, '__version__', '')}".rstrip())
-        except ImportError:
-            ok = False
-            print(f"  MISSING  {label}: uv sync")
-    return 0 if ok else 1
+    server_app.main(["--host", host, "--port", str(port)])
 
 
 def cmd_hello(args: argparse.Namespace) -> int:
@@ -57,29 +49,10 @@ def cmd_messages(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_set(args: argparse.Namespace) -> int:
-    if args.value is None:
-        print(f"{args.key} = {settings.all_settings().get(args.key)}")
-        return 0
-    try:
-        settings.save({args.key: None if args.value == "default" else args.value})
-    except KeyError as e:
-        sys.exit(str(e))
-    print(f"{args.key} = {settings.all_settings()[args.key]}")
-    return 0
-
-
-def cmd_serve(args: argparse.Namespace) -> int:
-    from app.server import app as server_app
-
-    server_app.main(["--host", args.host, "--port", str(args.port)])
-    return 0
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="app")
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("doctor", help="check the environment").set_defaults(fn=doctor)
+    shared.add_doctor(sub, "app", __version__, ("fastapi", "uvicorn", "pydantic", "strata_python"))
     h = sub.add_parser("hello", help="print a greeting (and optionally record it)")
     h.add_argument("name", nargs="?", default="World")
     h.add_argument("--greeting", help="override the default greeting word")
@@ -90,13 +63,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     m.add_argument("--clear", action="store_true")
     m.add_argument("--json", action="store_true")
     m.set_defaults(fn=cmd_messages)
-    s = sub.add_parser("set", help='show or change a setting (data_dir, greeting); value "default" resets it')
-    s.add_argument("key")
-    s.add_argument("value", nargs="?")
-    s.set_defaults(fn=cmd_set)
-    v = sub.add_parser("serve", help="start the web server")
-    v.add_argument("--host", default="127.0.0.1")
-    v.add_argument("--port", type=int, default=8360)
-    v.set_defaults(fn=cmd_serve)
+    shared.add_set(sub, settings.SETTINGS)
+    shared.add_serve(sub, run_server, default_port=8360)
     a = p.parse_args(argv)
     return a.fn(a)

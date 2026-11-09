@@ -23,10 +23,11 @@ def test_defaults_and_env_overrides(tmp_path, monkeypatch):
     assert settings.greeting() == "Hi"
 
 
-def test_save_load_and_reset():
+def test_save_load_and_reset(tmp_path):
     assert settings.load() == {}
-    saved = settings.save({"greeting": "Welcome", "data_dir": "/tmp/appdata"})
-    assert saved == {"greeting": "Welcome", "data_dir": "/tmp/appdata"}
+    elsewhere = str(tmp_path / "appdata")  # absolute on every platform
+    saved = settings.save({"greeting": "Welcome", "data_dir": elsewhere})
+    assert saved == {"greeting": "Welcome", "data_dir": elsewhere}
     assert settings.load() == saved
     assert settings.greeting() == "Welcome"
 

@@ -133,6 +133,13 @@ describe('Greetings', () => {
     await waitFor(() => expect(greetings()[0]).toBe('Hello, Ken!'))
     expect(greetings()).not.toContain('Welcome, Frances!')
     expect(mock.messages.map(m => m.name)).not.toContain('Frances')
+
+    // The server recovers; Try again sends the batch again, and the greeting already gone (404) counts as done.
+    server.resetHandlers()
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+    await waitFor(() => expect(mock.messages.map(m => m.name)).not.toContain('Ken'))
+    await waitFor(() => expect(greetings()[0]).toBe('Hello, Barbara!'))
+    expect(screen.queryByText(/did not go through/)).toBeNull()
   })
 
   it('teaches the next step when nothing is kept', async () => {

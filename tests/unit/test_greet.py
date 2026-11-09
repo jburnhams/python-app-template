@@ -8,9 +8,9 @@ from app import greet, settings
 
 
 def test_format_greeting_defaults_and_custom():
-    assert greet.format_greeting() == dict(name="World", greeting="Hello", message="Hello, World!")
-    assert greet.format_greeting("  Alice  ", "  Hi ") == dict(name="Alice", greeting="Hi", message="Hi, Alice!")
-    assert greet.format_greeting("", "") == dict(name="World", greeting="Hello", message="Hello, World!")
+    assert greet.format_greeting() == {"name": "World", "greeting": "Hello", "message": "Hello, World!"}
+    assert greet.format_greeting("  Alice  ", "  Hi ") == {"name": "Alice", "greeting": "Hi", "message": "Hi, Alice!"}
+    assert greet.format_greeting("", "") == {"name": "World", "greeting": "Hello", "message": "Hello, World!"}
 
 
 def test_format_greeting_validation():
@@ -35,14 +35,16 @@ def test_message_log_persistence_and_clear():
     assert greet.list_messages() == []
     m1 = greet.add_message("Alice")
     m2 = greet.add_message("Bob", "Welcome")
-    assert m1["id"] == 1 and m1["message"] == "Hello, Alice!"
-    assert m2["id"] == 2 and m2["message"] == "Welcome, Bob!"
+    assert m1["id"] == 1
+    assert m1["message"] == "Hello, Alice!"
+    assert m2["id"] == 2
+    assert m2["message"] == "Welcome, Bob!"
     msgs = greet.list_messages()
     assert [m["id"] for m in msgs] == [2, 1]
 
-    assert greet.clear_messages() == dict(cleared=2)
+    assert greet.clear_messages() == {"cleared": 2}
     assert greet.list_messages() == []
-    assert greet.clear_messages() == dict(cleared=0)
+    assert greet.clear_messages() == {"cleared": 0}
 
 
 def test_list_messages_handles_corrupt_or_non_list_file():
@@ -59,7 +61,8 @@ def test_ids_are_never_reused_after_a_removal():
     a, b = greet.add_message("Alice"), greet.add_message("Bob")
     assert greet.remove_message(b["id"]) == b
     c = greet.add_message("Cy")
-    assert c["id"] == 3 and [m["id"] for m in greet.list_messages()] == [3, 1]
+    assert c["id"] == 3
+    assert [m["id"] for m in greet.list_messages()] == [3, 1]
     assert greet.remove_message(a["id"]) == a
     assert greet.remove_message(99) is None
     assert [m["name"] for m in greet.list_messages()] == ["Cy"]
@@ -79,10 +82,12 @@ def test_page_messages_goes_after_the_cursor_newest_first():
     for n in ("a", "b", "c", "d", "e"):
         greet.add_message(n)  # ids 1..5; the log is 5, 4, 3, 2, 1
     first = greet.page_messages(limit=2)
-    assert [m["id"] for m in first["messages"]] == [5, 4] and first["has_more"] is True
+    assert [m["id"] for m in first["messages"]] == [5, 4]
+    assert first["has_more"] is True
     assert [m["id"] for m in greet.page_messages(after=4, limit=2)["messages"]] == [3, 2]
     last = greet.page_messages(after=2, limit=2)
-    assert [m["id"] for m in last["messages"]] == [1] and last["has_more"] is False
+    assert [m["id"] for m in last["messages"]] == [1]
+    assert last["has_more"] is False
     greet.remove_message(3)  # the cursor still works when its own greeting has gone
     assert [m["id"] for m in greet.page_messages(after=3, limit=5)["messages"]] == [2, 1]
-    assert greet.page_messages(after=1) == dict(messages=[], has_more=False)
+    assert greet.page_messages(after=1) == {"messages": [], "has_more": False}

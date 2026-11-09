@@ -19,7 +19,7 @@ def format_greeting(name: str = "World", greeting: str | None = None) -> dict:
         raise GreetingError("name is too long (at most 120 characters)")
     if len(clean_greeting) > 60:
         raise GreetingError("greeting is too long (at most 60 characters)")
-    return dict(name=clean_name, greeting=clean_greeting, message=f"{clean_greeting}, {clean_name}!")
+    return {"name": clean_name, "greeting": clean_greeting, "message": f"{clean_greeting}, {clean_name}!"}
 
 
 def _store_path() -> str:
@@ -85,7 +85,7 @@ def page_messages(after: int | None = None, limit: int = 20) -> dict:
     A cursor, not an offset: greetings removed between pages would make an offset skip the ones that moved up to fill the gap. Ids grow with time, so `after` still works when that greeting has itself been removed."""
     items = list_messages()
     rest = items if after is None else [m for m in items if m.get("id", 0) < after]
-    return dict(messages=rest[:limit], has_more=len(rest) > limit)
+    return {"messages": rest[:limit], "has_more": len(rest) > limit}
 
 
 def remove_message(message_id: int) -> dict | None:
@@ -109,4 +109,4 @@ def clear_messages() -> dict:
         p = _store_path()
         if os.path.exists(p):
             os.remove(p)
-    return dict(cleared=n)
+    return {"cleared": n}

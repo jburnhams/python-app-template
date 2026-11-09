@@ -42,13 +42,13 @@ class FakeUrlopen:
     def __call__(self, req, data=None, timeout=None, **kw):
         body = getattr(req, "data", None) if not isinstance(req, str) else data
         self.calls.append(
-            dict(
-                url=req if isinstance(req, str) else req.full_url,
-                method=None if isinstance(req, str) else req.get_method(),
-                timeout=timeout,
-                headers={} if isinstance(req, str) else {k.lower(): v for k, v in req.header_items()},
-                body=_maybe_json(body),
-            )
+            {
+                "url": req if isinstance(req, str) else req.full_url,
+                "method": None if isinstance(req, str) else req.get_method(),
+                "timeout": timeout,
+                "headers": {} if isinstance(req, str) else {k.lower(): v for k, v in req.header_items()},
+                "body": _maybe_json(body),
+            }
         )
         if not self.replies:
             raise AssertionError(f"unexpected HTTP request to {self.calls[-1]['url']} (no reply queued)")
@@ -80,7 +80,7 @@ def _maybe_json(b):
 class FakePopen:
     """Stands in for `subprocess.Popen`: records the command line and kwargs, never starts anything. `.instances` lists every one made."""
 
-    instances = []
+    instances = []  # noqa: RUF012  (deliberately shared: the class records every instance)
 
     def __init__(self, cmd, **kw):
         self.cmd, self.kw, self.pid, self.returncode = (

@@ -18,23 +18,24 @@ def test_defaults_and_env_overrides(tmp_path, monkeypatch):
     monkeypatch.setenv("APP_DATA", str(custom_data))
     monkeypatch.setenv("APP_GREETING", "  Hi  ")
     assert settings.home() == str(custom_home)
-    assert settings.data_dir() == str(custom_data) and custom_data.is_dir()
+    assert settings.data_dir() == str(custom_data)
+    assert custom_data.is_dir()
     assert settings.greeting() == "Hi"
 
 
 def test_save_load_and_reset():
     assert settings.load() == {}
-    saved = settings.save(dict(greeting="Welcome", data_dir="/tmp/appdata"))
-    assert saved == dict(greeting="Welcome", data_dir="/tmp/appdata")
+    saved = settings.save({"greeting": "Welcome", "data_dir": "/tmp/appdata"})
+    assert saved == {"greeting": "Welcome", "data_dir": "/tmp/appdata"}
     assert settings.load() == saved
     assert settings.greeting() == "Welcome"
 
-    after = settings.save(dict(greeting=None))
+    after = settings.save({"greeting": None})
     assert "greeting" not in after
     assert settings.greeting() == "Hello"
 
     with pytest.raises(KeyError, match="unknown setting"):
-        settings.save(dict(unknown_key="val"))
+        settings.save({"unknown_key": "val"})
 
 
 def test_corrupt_or_non_dict_settings_file():

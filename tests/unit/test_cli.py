@@ -28,7 +28,8 @@ def test_hello_and_messages_commands(capsys):
 
     assert cli.main(["hello", "Alice", "--greeting", "Hi", "--save", "--json"]) == 0
     rec = json.loads(capsys.readouterr().out)
-    assert rec["message"] == "Hi, Alice!" and rec["id"] == 1
+    assert rec["message"] == "Hi, Alice!"
+    assert rec["id"] == 1
 
     assert cli.main(["messages"]) == 0
     assert "Hi, Alice!" in capsys.readouterr().out

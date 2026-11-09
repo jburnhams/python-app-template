@@ -63,8 +63,11 @@ def test_file_lock_windows_branch(tmp_path, monkeypatch):
 
 
 def test_pid_alive(monkeypatch):
-    assert oslib.pid_alive(os.getpid()) and oslib.pid_alive(str(os.getpid()))
-    assert not oslib.pid_alive(None) and not oslib.pid_alive("x") and not oslib.pid_alive(0)
+    assert oslib.pid_alive(os.getpid())
+    assert oslib.pid_alive(str(os.getpid()))
+    assert not oslib.pid_alive(None)
+    assert not oslib.pid_alive("x")
+    assert not oslib.pid_alive(0)
     p = subprocess.Popen([sys.executable, "-c", "pass"])
     p.wait()
     assert not oslib.pid_alive(p.pid)
@@ -99,7 +102,8 @@ def test_pid_alive_windows_branch(monkeypatch):
 
     monkeypatch.setattr(ctypes, "windll", types.SimpleNamespace(kernel32=FakeKernel32()), raising=False)
     assert not oslib.pid_alive(99)
-    assert oslib.pid_alive(100) and closed == [42]
+    assert oslib.pid_alive(100)
+    assert closed == [42]
 
 
 def test_kill_tree_ends_the_process(monkeypatch):
@@ -160,4 +164,5 @@ def test_lower_priority_and_venv_python(monkeypatch):
 
 def test_cli_command_runs_the_cli():
     out = subprocess.run([*oslib.cli_command(), "--help"], capture_output=True, text=True, timeout=60)
-    assert out.returncode == 0 and "hello" in out.stdout, out.stderr[-300:]
+    assert out.returncode == 0, out.stderr[-300:]
+    assert "hello" in out.stdout

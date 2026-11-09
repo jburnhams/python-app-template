@@ -37,11 +37,11 @@ def create_app():
         try:
             return fn(*a, **kw)
         except greet.GreetingError as e:
-            raise HTTPException(400, str(e))
+            raise HTTPException(400, str(e)) from e
 
     @app.get("/api/health")
     def get_health():
-        return dict(ok=True, version=__version__)
+        return {"ok": True, "version": __version__}
 
     @app.get("/api/system")
     def get_system():

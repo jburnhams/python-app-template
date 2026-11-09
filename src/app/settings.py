@@ -64,4 +64,4 @@ def greeting():
 
 
 def all_settings():
-    return dict(data_dir=data_dir(), greeting=greeting())
+    return {"data_dir": data_dir(), "greeting": greeting()}

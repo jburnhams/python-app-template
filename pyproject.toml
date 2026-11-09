@@ -64,10 +64,10 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "C4", "PT", "S"]
-ignore = ["E701", "E702", "E741"]        # reviewed per rule below once the code is formatted
+ignore = ["E501"]        # the formatter wraps code; long comments and docstrings stay (the house style comments the why)
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S105", "S106", "S108", "S603", "S607"]    # asserts, fake secrets, tmp paths, subprocess of our own CLI
+"tests/**" = ["S101", "S104", "S105", "S106", "S108", "S603", "S607"]    # asserts, fake secrets, tmp paths, subprocess of our own CLI
 
 [tool.pyright]
 include = ["src"]

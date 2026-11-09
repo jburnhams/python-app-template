@@ -38,11 +38,12 @@ export function ofSize(used: number, size: number) {
  *  reserves for itself is neither, so measuring against `total` would never show a full disk. */
 export const usable = (disk: SystemStatus['disk']) => disk.used + disk.free
 
-/** The page's finding, from the disk the data folder is on. */
-export function describeDisk({ disk }: SystemStatus): string {
+/** The page's finding, from the disk the data folder is on. When the latest poll failed, it says so first and reads the disk as old news. */
+export function describeDisk({ disk }: SystemStatus, answering = true): string {
   const share = disk.used / usable(disk)
   const crossed = crossedThreshold(share, diskThresholds)
   const left = `${format.bytes(disk.free)} free`
+  if (!answering) return `The server is not answering. When last read, the data disk was ${format.percent(share)} full, with ${left}.`
   if (!crossed) return `Everything is running. The data disk is ${format.percent(share)} full, with ${left}.`
   return crossed.tone === 'danger'
     ? `The data disk is ${format.percent(share)} full, with ${left}. Free space or move the data folder in Settings before greetings stop saving.`
@@ -71,7 +72,7 @@ export function SystemScreen() {
       <PageHeader
         title="System"
         scope="This computer, checked every minute"
-        finding={load.status === 'ready' ? { text: describeDisk(load.data) } : undefined}
+        finding={load.status === 'ready' ? { text: describeDisk(load.data, answering) } : undefined}
       />
       <DataView
         state={load}
@@ -102,15 +103,18 @@ export function SystemScreen() {
 
             <section aria-labelledby="running" className="grid gap-3">
               <h2 id="running" className="type-heading">Running</h2>
-              <dl className="grid max-w-xl grid-cols-[auto_1fr] gap-x-6 gap-y-2 type-body-sm">
-                <dt className="text-muted-foreground">Server</dt>
-                <dd>{answering ? <Status tone="success">Answering</Status> : <Status tone="danger">Not answering</Status>} <span className="ml-2 tabular-nums">version {s.version}</span></dd>
-                <dt className="text-muted-foreground">Python</dt>
-                <dd className="tabular-nums">{s.python}</dd>
-                <dt className="text-muted-foreground">Platform</dt>
-                <dd>{s.platform}</dd>
-                <dt className="text-muted-foreground">Greetings kept</dt>
-                <dd className="tabular-nums">{format.integer(s.messages)}</dd>
+              <dl className="grid max-w-xl gap-2 type-body-sm">
+                {([
+                  ['Server', <>{answering ? <Status tone="success">Answering</Status> : <Status tone="danger">Not answering</Status>} <span className="ml-2 tabular-nums">version {s.version}</span></>],
+                  ['Python', <span className="tabular-nums">{s.python}</span>],
+                  ['Platform', s.platform],
+                  ['Greetings kept', <span className="tabular-nums">{format.integer(s.messages)}</span>],
+                ] as const).map(([term, value]) => (
+                  <div key={term} className="flex gap-6">
+                    <dt className="w-28 shrink-0 text-muted-foreground">{term}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
               </dl>
             </section>
 

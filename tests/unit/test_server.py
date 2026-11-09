@@ -34,6 +34,9 @@ def test_every_page_path_serves_the_app_with_a_base_back_to_its_root(tmp_path, m
     assert c.get('/settings?tab=appearance').text == '<html><head><base href="./"><title>t</title></head></html>'
     assert '<base href="../">' in c.get('/log/2026').text                # one level down: one step back up
     assert c.get('/favicon.svg').text == '<svg/>'
+    for escape in ('..%5Capp.py', '..%2Fapp.py', 'C:%5Cwindows%5Cwin.ini', '..'):           # never a file outside the static folder: the app instead
+        assert c.get('/' + escape).text.startswith('<html><head><base')
+    assert server_app.static_file('..\\app.py') is None and server_app.static_file('C:\\x') is None and server_app.static_file('') is None and server_app.static_file('missing.txt') is None
     assert c.get('/api/nope').status_code == 404                          # an unknown endpoint is not the app
     assert c.get('/api/nope').json() == dict(detail='no such endpoint')
 

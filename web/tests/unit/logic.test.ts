@@ -52,6 +52,7 @@ describe('the System finding', () => {
     expect(describeDisk(systemStatus)).toBe(`Everything is running. The data disk is 59% full, with ${format.bytes(210.4e9)} free.`)
     expect(describeDisk(systemNearlyFull)).toMatch(/^The data disk is 96% full, .* Free space or move the data folder in Settings/)
     const filling = { ...systemStatus, disk: { total: 100, used: 85, free: 15 } }
+    expect(describeDisk(systemStatus, false)).toBe(`The server is not answering. When last read, the data disk was 59% full, with ${format.bytes(210.4e9)} free.`)
     expect(describeDisk(filling)).toBe(`The data disk is 85% full, with ${format.bytes(15)} free. Nothing needs doing yet.`)
   })
 })

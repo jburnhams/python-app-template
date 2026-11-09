@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { http, HttpResponse } from 'msw'
 import { addFails, messagesEmpty, messagesError, removeFails } from '../../src/mocks/handlers'
 import { openApp, screen, waitFor, within } from '../utils/render'
 import { mock, server } from '../utils/server'
@@ -113,6 +114,21 @@ describe('Greetings', () => {
     await user.click(screen.getByRole('button', { name: 'Remove 2' }))
     expect(greetings()).toHaveLength(6)
     expect(screen.getByText('Removed 2 greetings.')).toBeInTheDocument()
+  })
+
+  it('keeps a greeting gone when a bulk removal fails part way, and brings back only the rest', async () => {
+    server.use(http.delete('*/api/messages/7', () => new HttpResponse(null, { status: 503, statusText: 'Service Unavailable' })))
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const { user } = openApp('/', { user: { advanceTimers: vi.advanceTimersByTime } })
+    await screen.findByRole('table')
+    await user.click(screen.getByRole('checkbox', { name: 'Select Welcome, Frances!' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Select Hello, Ken!' }))
+    await user.click(screen.getByRole('button', { name: 'Remove 2' }))
+    await vi.advanceTimersByTimeAsync(8000)
+    expect(await screen.findByText(/did not go through/)).toBeInTheDocument()
+    await waitFor(() => expect(greetings()[0]).toBe('Hello, Ken!'))
+    expect(greetings()).not.toContain('Welcome, Frances!')
+    expect(mock.messages.map(m => m.name)).not.toContain('Frances')
   })
 
   it('teaches the next step when nothing is kept', async () => {

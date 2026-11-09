@@ -12,7 +12,7 @@
 // `npm run test:visual` builds both and compares; `npm run test:visual:update` writes new
 // baselines. Look at a diff in tests/visual/output/ before accepting it.
 import { defineVisualConfig } from 'strata-react/visual'
-import { handlers, logLong } from './src/mocks/handlers'
+import { handlers } from './src/mocks/handlers'
 
 export default defineVisualConfig({
   storybook: 'storybook-static',
@@ -48,7 +48,10 @@ export default defineVisualConfig({
           },
         },
       },
-      { name: 'log', path: '/log', states: { long: [logLong] } },
+      // The log is shot with one page. A long log is not screenshotted: the list asks for the next page on
+      // its own as its end comes near, and focus and scroll move as pages land, so which rows are in view
+      // depends on timing (two machines disagreed). Its paging is tested in jsdom (tests/integration/LogScreen).
+      { name: 'log', path: '/log' },
       { name: 'system', path: '/system' },
       { name: 'settings', path: '/settings', states: { general: [], appearance: { path: '/settings?tab=appearance' } } },
     ],

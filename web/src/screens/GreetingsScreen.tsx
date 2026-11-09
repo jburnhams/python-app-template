@@ -19,6 +19,7 @@ import {
   DataTable,
   DataView,
   EmptyState,
+  HttpError,
   Field,
   Input,
   Metric,
@@ -75,9 +76,14 @@ export function GreetingsScreen() {
       message: one ? `Removed “${one.message}”.` : `Removed ${format.count(chosen.length, 'greeting')}.`,
       failure: one ? `“${one.message}” is back: removing it did not go through.` : `The ${format.count(chosen.length, 'greeting')} are back: removing them did not go through.`,
       commit: async () => {
-        for (const m of chosen) await api.removeMessage(m.id)
-        await queryClient.invalidateQueries({ queryKey: keys.messages })
-        await queryClient.invalidateQueries({ queryKey: keys.system })
+        // One request each, so a batch can fail part way. Read again whatever happens, so a greeting
+        // that did go stays gone, and count one already gone (404, a retry after a partial failure) as done.
+        try {
+          for (const m of chosen) await api.removeMessage(m.id).catch(e => { if (!(e instanceof HttpError && e.status === 404)) throw e })
+        } finally {
+          await queryClient.invalidateQueries({ queryKey: keys.messages })
+          await queryClient.invalidateQueries({ queryKey: keys.system })
+        }
       },
     })
     selection.clear()

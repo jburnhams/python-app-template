@@ -81,13 +81,23 @@ def create_app():
     @app.get('/{path:path}', response_class=HTMLResponse, include_in_schema=False)
     def page(path: str):
         if path.startswith('api/'): raise HTTPException(404, 'no such endpoint')
-        top = os.path.join(STATIC, path)
-        if path and '/' not in path and os.path.isfile(top): return FileResponse(top)     # favicon.svg and the like, built from web/public
+        top = static_file(path)
+        if top: return FileResponse(top)     # favicon.svg and the like, built from web/public
         built = os.path.join(STATIC, 'index.html')          # the React app when it has been built (cd web && npm run build), else the plain stand-in page
         with open(built if os.path.exists(built) else LANDING, encoding='utf8') as f: html = f.read()
         return with_base(html, path)
 
     return app
+
+
+def static_file(path: str) -> str | None:
+    """The built file at the top of the static folder that `path` names, or None. Only a plain file name is served: a path with either separator,
+    a drive or `..` could reach outside the folder (on Windows `..\\app.py` has no `/`, and `os.path.join` drops STATIC for `C:\\...`), so the
+    resolved file must also sit directly in STATIC."""
+    if not path or '/' in path or '\\' in path or ':' in path or path in ('.', '..'): return None
+    root = os.path.realpath(STATIC)
+    full = os.path.realpath(os.path.join(root, path))
+    return full if os.path.dirname(full) == root and os.path.isfile(full) else None
 
 
 def with_base(html: str, path: str) -> str:

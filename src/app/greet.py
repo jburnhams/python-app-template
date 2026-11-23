@@ -38,8 +38,10 @@ class Sent(Greeting):
 
     @classmethod
     def of(cls, row: SentGreeting) -> "Sent":
-        # SQLite keeps no time zone, so a time read back from it is naive; every time stored here is UTC.
-        created = row.created if row.created.tzinfo else row.created.replace(tzinfo=datetime.UTC)
+        # Every time stored here is UTC. SQLite keeps no zone, so its times come back naive; Postgres's come back in
+        # the session's zone (Etc/UTC on a default server). Either way the answer is in UTC.
+        c = row.created
+        created = c.replace(tzinfo=datetime.UTC) if c.tzinfo is None else c.astimezone(datetime.UTC)
         return cls(id=row.id, name=row.name, greeting=row.greeting, message=row.message, created=created)
 
 

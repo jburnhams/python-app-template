@@ -36,7 +36,7 @@ pythonpath = ["tests/utils"]
 strata_env_prefix = "APP"                 # strata-python plugin: APP_HOME and APP_DATA point into a tmp dir for every test
 strata_tuning_vars = ["APP_GREETING", "APP_STYLE"]    # removed from the environment for every test
 testpaths = ["tests/unit"]
-addopts = "-ra --timeout=300 --strict-markers --strict-config"
+addopts = "-ra --timeout=300 --strict-markers --strict-config --import-mode=importlib"   # importlib: tests/unit and tests/integration may share file names
 filterwarnings = ["ignore:Using `httpx` with `starlette.testclient`"]       # TestClient noise from the installed starlette; remove when the dependency moves on
 markers = [
     "integration: runs the CLI and HTTP server end-to-end (tests/integration)",

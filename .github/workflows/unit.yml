@@ -33,8 +33,26 @@ jobs:
       - name: Lockfile, lint, format and types (once, on the newest Python)
         if: matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest'
         run: uv run --locked strata-check --fast
+      - name: Migrations run from empty, match the models and downgrade (strata-db check)
+        if: matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest'
+        run: uv run --locked strata-db check
+      # The template is public: no email addresses, home paths, private addresses or the owner's own names (the
+      # STRATA_PUBLIC_DENY secret, when the repository has it) in the tree or the wheel. An app keeps this step.
+      - name: Nothing personal or machine-specific in the tree or the build
+        if: matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest'
+        env:
+          STRATA_PUBLIC_DENY: ${{ secrets.STRATA_PUBLIC_DENY }}
+        run: uv build && uv run --locked strata-public-check . dist/*
       - name: Unit tests with coverage (unit suite only)
         run: uv run pytest tests/unit --cov --cov-report=term --cov-report=xml
+      # The models are portable and a deployment may use the shared Postgres, so the database tests also run on a
+      # throwaway Postgres the run starts for itself (strata-python's --pg; needs the server binaries, which the
+      # Ubuntu image ships). SQLite alone would hide Postgres-only behaviour (types, time zones, locking).
+      - name: Unit tests on Postgres
+        if: matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest'
+        run: |
+          ls /usr/lib/postgresql/*/bin/initdb || (sudo apt-get update && sudo apt-get install -y postgresql)
+          uv run --locked pytest tests/unit --pg -q
       - name: Upload coverage
         if: matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v7
@@ -55,7 +73,12 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      - name: Lint (Biome, then oxlint with type information)
+        run: npm run lint
       - run: npm run typecheck
+      # web/openapi.json is checked against the server by the Python unit tests; this checks the types made from it.
+      - name: Generated API types match web/openapi.json
+        run: npm run api-types:check
       - name: Unit tests with coverage (unit project only)
         run: npm run test:coverage
       - name: Coverage gate (unit + jsdom component tests together, floors in web/coverage-floor.json)

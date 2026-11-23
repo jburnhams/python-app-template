@@ -52,6 +52,18 @@ def test_send_keeps_greetings_newest_first_and_clear_removes_them(db_session: Se
     assert greet.clear(db_session).cleared == 0
 
 
+def test_times_read_back_in_any_zone_are_answered_in_utc():
+    from zoneinfo import ZoneInfo
+
+    from app.models import SentGreeting
+
+    when = datetime.datetime(2026, 11, 9, 10, 12, tzinfo=ZoneInfo("Europe/Paris"))  # how a Postgres session may answer
+    row = SentGreeting(name="Ada", greeting="Hi", message="Hi, Ada!", created=when)
+    row.id = 7
+    assert greet.Sent.of(row).created == datetime.datetime(2026, 11, 9, 9, 12, tzinfo=datetime.UTC)
+    assert greet.Sent.of(row).created.tzinfo is datetime.UTC
+
+
 def test_a_refused_greeting_keeps_nothing(db_session: Session):
     with pytest.raises(greet.GreetingError):
         greet.send(db_session, "x" * 121)

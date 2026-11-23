@@ -1,5 +1,14 @@
 # Progress log
 
+## 2026-11-23: onto strata-python 0.2.6 and strata-react 1.3.3, every dependency current
+
+- Asked for: the latest strata-python and strata-react, every other dependency at its latest, and the working practices that make this a good example and starting point for new apps.
+- Python: strata-python from PyPI (`[db]`, `[dev]`) instead of a git source tracking main, so the template uses what apps use; the weekly upgrade workflow went, as grouped dependabot does the same. The app shrank to declarations and logic: `add_error_handlers` replaced `guard()`, `add_system` replaced the hand-written `/api/system`, the plugin's fixtures and `run_cli`/`run_module` replaced `tests/utils/fakes.py` and the conftest copies.
+- Records: greetings moved from `messages.json` with a lock file and a `messages.seq` id file to one SQLAlchemy table through `strata_python.db`, which is what a new app would need first. `sqlite_autoincrement` keeps ids from being reused (the reason for `messages.seq`); Postgres identities never go back. The `data_dir` setting went with the files; the database is a SQLite file in the app home unless a URL is configured. Running the unit tests on Postgres (`--pg`) found that Postgres returns times in the session's zone (`Etc/UTC`), where SQLite returns them naive: both are now answered in UTC, and CI runs the unit tests on Postgres too.
+- Types: routes return `ApiModel`s, so `web/openapi.json` and `web/src/api.generated.ts` describe them, and the web app's hand-written interfaces, paths and fetch helpers went (`createTypedApi`). strata-python's `Page` leaves `next` optional in the schema (a field with a default) though it is always sent, so the Log screen says `?? null`; fixing `Page` (and the other contracts) to use `ApiModel`'s config belongs in strata-python. The System page's own fields (`greetings`, `home_bytes`) ride on `SystemInfo`'s extras, which the schema cannot name, so their type is written by hand in `api.ts`.
+- Web: strata-react 0.1 to 1.3 brought React Aria (DataTable and InfiniteList are grids; `Button asChild` is gone, `ButtonLink` replaces it), `useAsyncAction`'s `validate`/`fieldErrors`, `HttpError` with the server's sentence (strata-react#42, raised here on 2026-11-09, is closed by it), `apiPage`, `appBase` and `expectOneFilledButton`. Biome and oxlint `--type-aware` (leaflet-node's stack) in this code's own style; one formatting pass.
+- Visual: 78 baselines rewritten in the pinned Chromium (Playwright 1.65.1, Chromium 159) after looking at them; the bulk-selection state chooses rows with Space, since Playwright will not click React Aria's visually hidden checkbox input.
+
 ## 2026-11-09: web app rebuilt on strata-react
 
 - Asked for: make the template use strata-react fully, as an example and starter for new apps, with Storybook and visual testing.

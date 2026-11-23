@@ -1,6 +1,6 @@
 # Python tests
 
-pytest 8, pytest-cov, **hypothesis**, **pytest-randomly**, **pytest-timeout**, pytest-xdist, diff-cover (`uv sync` installs the `dev` dependency group). The web tests are in `web/tests` (see `web/tests/README.md`).
+pytest, pytest-cov, **hypothesis**, **pytest-randomly**, **pytest-timeout**, pytest-xdist (all through `strata-python[dev]`) and diff-cover (`uv sync` installs the `dev` dependency group). The web tests are in `web/tests` (see `web/tests/README.md`).
 
 This file holds only what **both** Python suites share, and it is rarely edited. Each suite keeps its own notes so that parallel work on them does not collide:
 
@@ -14,6 +14,7 @@ This file holds only what **both** Python suites share, and it is rarely edited.
 uv run pytest tests/unit --cov                    # unit suite + coverage (what CI gates on: fail_under in pyproject.toml, only ratchets up)
 uv run pytest tests/unit -n auto                  # in parallel
 uv run pytest tests/integration -n auto           # the CLI and HTTP API end-to-end
+uv run pytest tests/unit --pg                     # the same unit tests on a throwaway Postgres (needs the server binaries; CI runs it)
 uv run pytest -p randomly -p "randomly_seed=N"    # reproduce a failure from a CI run (the seed is in the header of every run)
 uv run pytest tests/unit/test_x.py -k name        # one test
 scripts/check                              # lint, format, types, lockfile, unit tests: the gate
@@ -24,10 +25,11 @@ CI (`.github/workflows/`): `unit.yml` (lint, unit tests with coverage on Linux f
 
 ## Layout
 
-- `unit/`: fast, isolated, synthetic data and fakes; no external services or network.
+- `unit/`: fast and isolated; the database is a migrated SQLite copy per test (`db_session`, `db_env`), the HTTP API the `client` fixture; no external services or network.
 - `integration/`: the CLI (in process and as a real process) and the HTTP API over real on-disk files. Not part of the coverage gate.
-- Both suites are hermetic (autouse in `conftest.py`): `~`, `APP_HOME` and `APP_DATA` point into a tmp dir outside `tmp_path`, tuning/override variables (`APP_GREETING`) are removed, and any outbound (non-loopback) connection fails the test.
-- `utils/`: helpers importable by name in any test (`tests/utils` is on `pythonpath`). The strata-python plugin provides the `http_server` fixture, a real HTTP server on loopback scripted per test: use it for anything that makes outbound requests. `fakes.py` (`FakeUrlopen`, `FakePopen`, `FakeRun`) are last-resort doubles; see the testing policy in `AGENTS.md`: real requests, real embedded databases and real programs by default, mocks only for true externals in quick many-case unit tests, no silent skips.
+- Both suites are hermetic (the strata-python plugin, autouse): `~` and `APP_HOME` point into a fresh folder outside `tmp_path`, tuning/override variables (`APP_GREETING`, `APP_STYLE`) are removed, and any outbound (non-loopback) connection fails the test.
+- Fixtures from the plugin: `http_server` (a real HTTP server on loopback, scripted per test: use it for anything that makes outbound requests), `live_app` (the app under uvicorn on a real port), `db_session`/`db_engine`/`db_url`/`db_env`, and the last-resort doubles `fake_urlopen`, `fake_popen`, `fake_run`, `no_sleep` (see the testing policy in `AGENTS.md`: real requests, real databases and real programs by default). `tests/conftest.py` adds `client`.
+- `utils/`: the app's own helpers, importable by name in any test (`tests/utils` is on `pythonpath`); none yet. Tests import in importlib mode, so `unit/` and `integration/` may hold files of the same name.
 - One test file per module (`greet.py` -> `unit/test_greet.py`; add to the existing file if there is one).
 
 ## Who owns which files (so parallel branches don't conflict)

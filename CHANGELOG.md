@@ -2,6 +2,28 @@
 
 Newest first, grouped by day. One entry per change, in the same commit or PR as the change.
 
+## 2026-11-23
+
+**Latest strata-python and strata-react, every dependency current, the template as the example app (branch `claude/project-thread-61o806`)**
+Jonathan asked for the template to use the latest strata-python and strata-react, for every other dependency to be at its latest, and for it to adopt the working practices that make it a good starting point for new apps. That meant taking strata-python from PyPI rather than a git source, keeping the sample's greetings in a database through `strata_python.db`, typing the API end to end, and moving the web tooling onto leaflet-node's stack (Biome + oxlint). Correction: the earlier rule that the template ships no database is superseded; greetings now live in SQLite (or Postgres) and `data_dir` is gone.
+
+- `pyproject.toml`, `uv.lock`: `strata-python[db]>=0.2.6,<0.3` from PyPI, dev group `strata-python[dev]` plus hypothesis and diff-cover; lock upgraded; `[tool.strata-db]`; pytest `--import-mode=importlib` so both suites run together.
+- `.github/dependabot.yml`: grouped uv, npm and Actions updates. `.github/workflows/upgrade-strata-python.yml`: removed (Dependabot does it).
+- `src/app/strata-db.toml`, `src/app/models.py`, `src/app/db.py`, `src/app/migrations/`: **new**; the greetings table, its first revision, and where the records are (`STRATA_DB_URL`/`APP_DATABASE_URL`, else `~/.app/app.db`).
+- `src/app/settings.py`: `greeting` and `style` (`choices`); `data_dir` removed.
+- `src/app/greet.py`: `ApiModel` contracts (`Greeting`, `Sent`, `Cleared`), database reads and writes, a cursor-paged `Page[Sent]`; times read back from Postgres answered in UTC.
+- `src/app/system.py`: the app's own numbers on the shared `/api/system`.
+- `src/app/server/app.py`: `base_app(commit=)`, `add_error_handlers`, `add_database`, `add_system`; typed routes. `src/app/server/landing.html`: no data folder.
+- `src/app/cli.py`: `hello --save` and `messages` through `db.session()`; `openapi [--check]`.
+- `web/openapi.json`, `web/src/api.generated.ts`: **new**, generated (`uv run app openapi`, `npm run api-types`).
+- `web/package.json`, `web/package-lock.json`: strata-react 1.3.3 and every dependency at its latest (React Router 8, MSW 3, Vitest 5, Storybook 10.6, Playwright 1.65.1); the TypeScript 6/7 split; `lint`, `format`, `api-types`, `api-types:check`. `web/biome.json`, `web/.oxlintrc.json`: **new**.
+- `web/src/api.ts`, `web/src/main.tsx`, `web/src/screens/*`, `web/src/mocks/*`: `createTypedApi`, `appBase()`, `ButtonLink`, `useAsyncAction` field errors, `ChoiceGroup`, the system page from `/api/system`; mocks answer the new shapes (new `systemUnread` state).
+- `web/stories/`, `web/tests/`, `web/strata-visual.config.ts`: React Aria roles, `expectOneFilledButton`, new disk-unread story; the selected state presses Space on the row checkboxes.
+- `web/tests/visual/baselines/`: all 78 rewritten (React Aria controls, lucide 1.78, Chromium 159, the new system and settings screens).
+- `tests/`: the plugin's `db_session`/`db_env`/`live_app` and `strata_python.testing` (`run_cli`, `run_module`, `assert_openapi_current`, the standard database tests) replace the app's own helpers; `tests/utils/fakes.py` removed.
+- `.github/workflows/unit.yml`: `strata-db check`, `strata-public-check` on the tree and wheel, unit tests on Postgres, web lint and generated-types check. `update-visual-baselines.yml`: checkout v7.
+- `README.md`, `AGENTS.md`, `docs/*`, `deploy/app.service`, `tests/**/README.md`, `web/tests/README.md`: describe the database, the typed API and the new commands; `APP_DATA` and `withBase()` references removed.
+
 ## 2026-11-09
 
 **Regenerate visual baselines on the CI runner (branch `claude/project-thread-iw7199`)**

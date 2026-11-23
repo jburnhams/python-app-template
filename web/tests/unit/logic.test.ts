@@ -37,7 +37,9 @@ describe('the Greetings finding and figures', () => {
 describe('the System finding', () => {
   it("reads the home folder's disk and names the threshold crossed", () => {
     expect(homeDisk(systemStatus)).toEqual({ size: 512e9, used: 512e9 - 210.4e9, free: 210.4e9 })
-    expect(homeDisk({ ...systemStatus, folders: [{ name: 'home', path: '/x', exists: false }] })).toBeUndefined()
+    expect(
+      homeDisk({ ...systemStatus, folders: [{ name: 'home', path: '/x', exists: false, free_bytes: null, total_bytes: null }] }),
+    ).toBeUndefined()
     expect(ofSize(301.6e9, 512e9)).toBe(`${format.bytes(301.6e9, 'GB')} of ${format.bytes(512e9, 'GB')}`)
     expect(describeDisk(systemStatus)).toBe(`Everything is running. The data disk is 59% full, with ${format.bytes(210.4e9)} free.`)
     expect(describeDisk(systemNearlyFull)).toMatch(/^The data disk is 96% full, .* Free space before greetings stop saving\.$/)
@@ -56,8 +58,8 @@ describe('the mock server', () => {
   it("pages the log after a cursor with the server's own next, as greet.page does", () => {
     const log = makeMessages(5) // ids 5..1, newest first
     const url = (q: string) => `http://x/api/messages/page?${q}`
-    expect(messagePage(url('limit=2'), log)).toEqual({ items: log.slice(0, 2), next: '4' })
-    expect(messagePage(url('after=2&limit=2'), log)).toEqual({ items: log.slice(4), next: null })
+    expect(messagePage(url('limit=2'), log)).toEqual({ items: log.slice(0, 2), next: '4', total: null })
+    expect(messagePage(url('after=2&limit=2'), log)).toEqual({ items: log.slice(4), next: null, total: null })
     expect(messagePage(url(''), log).items).toHaveLength(5)
   })
 })

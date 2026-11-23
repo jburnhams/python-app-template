@@ -48,10 +48,11 @@ def create_app() -> FastAPI:
     # Opened and migrated on the first request that needs it, so a server nobody records on makes no database.
     records = add_database(app, db.PROJECT, default=db.default_url)
 
-    def numbers() -> dict[str, object]:
+    # Annotated with its model, so the schema's PythonAppTemplateSystemInfo lists these fields and the web types have them.
+    def numbers() -> system.AppNumbers:
         with Session(records.engine()) as s:
             n = greet.count(s)
-        return system.AppNumbers(greetings=n, home_bytes=system.folder_bytes(settings.SETTINGS.home())).model_dump()
+        return system.AppNumbers(greetings=n, home_bytes=system.folder_bytes(settings.SETTINGS.home()))
 
     web.add_system(app, __version__, commit=COMMIT, folders={"home": settings.SETTINGS.home}, extra=numbers)
 

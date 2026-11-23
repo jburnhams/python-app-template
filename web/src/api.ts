@@ -18,9 +18,9 @@ export type Greeting = Schema<'Greeting'>
 export type Sent = Schema<'Sent'>
 export type SentPage = Schema<'Page_Sent_'>
 export type Folder = Schema<'Folder'>
-/** `GET /api/system`: strata-python's SystemInfo plus this app's own numbers (src/app/system.py
- *  AppNumbers). Those are extra fields on the shared model, so the schema does not name them. */
-export type SystemStatus = Schema<'SystemInfo'> & { greetings: number; home_bytes: number }
+/** `GET /api/system`: strata-python's SystemInfo plus this app's own numbers (src/app/system.py AppNumbers),
+ *  merged into one schema by `add_system`, so nothing here is written by hand. */
+export type SystemStatus = Schema<'PythonAppTemplateSystemInfo'>
 
 export const api = createTypedApi<paths>()
 

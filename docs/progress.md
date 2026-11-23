@@ -1,5 +1,9 @@
 # Progress log
 
+## 2026-11-23: strata-python 0.2.7, the last hand-written types go
+
+- The two gaps noted below were fixed in strata-python (#45, #46) and released as 0.2.7. `Page` and the other shared responses now list defaulted fields as required, so the Log screen's `?? null` went; `add_system` reads the `extra` callable's return annotation and names the merged model `PythonAppTemplateSystemInfo`, so `SystemStatus` comes from the schema. Mock pages now send `total: null`, as the server does, because the type requires it.
+
 ## 2026-11-23: onto strata-python 0.2.6 and strata-react 1.3.3, every dependency current
 
 - Asked for: the latest strata-python and strata-react, every other dependency at its latest, and the working practices that make this a good example and starting point for new apps.

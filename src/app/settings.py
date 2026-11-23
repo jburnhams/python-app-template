@@ -1,47 +1,29 @@
-"""User settings: one JSON file, `~/.app/settings.json` (the folder can be moved with the APP_HOME environment variable).
+"""User settings: one JSON file, `~/.app/settings.json` (the folder moves with the APP_HOME environment variable).
 
-  data_dir   where application data files live. Default: `data/` in this repository (gitignored) until configured. Must be an absolute path.
-  greeting   default greeting word used by `greet.py` (default: 'Hello').
+APP_GREETING and APP_STYLE override the file (handy for tests and one-off runs).
 
-The environment variables APP_DATA and APP_GREETING override the file (handy for tests and one-off runs). The file handling, precedence and validation are
+  greeting   the word a greeting starts with when none is given (default: 'Hello').
+  style      how a greeting ends: 'excited' ("Hello, Ada!") or 'calm' ("Hello, Ada."). One of a fixed set, so the API
+             schema types it as an enum and the web app's generated type is that union.
+
+The file handling, precedence, validation and the `GET`/`PUT /api/settings` routes are
 [strata_python.settings](https://github.com/jburnhams/strata-python); this module only declares the app's settings."""
 
-import os
-from collections.abc import Mapping
-from typing import Any
+from typing import Literal
 
-from strata_python.settings import Setting, Settings, absolute_path, non_empty
+from strata_python.settings import Setting, Settings, non_empty
 
-REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DEFAULT_DATA_DIR = os.path.join(REPO, "data")
-DEFAULT_GREETING = "Hello"
+Style = Literal["excited", "calm"]
+STYLES: tuple[Style, ...] = ("excited", "calm")
+ENDINGS: dict[str, str] = {"excited": "!", "calm": "."}
 
 SETTINGS = Settings(
     "app",
     [
-        Setting("data_dir", default=DEFAULT_DATA_DIR, normalise=absolute_path, env="APP_DATA"),
-        Setting("greeting", default=DEFAULT_GREETING, normalise=non_empty),
+        Setting("greeting", default="Hello", normalise=non_empty),
+        Setting("style", default="excited", choices=list(STYLES)),
     ],
 )
-KNOWN = SETTINGS.keys
-
-
-def home() -> str:
-    return SETTINGS.home()
-
-
-def load() -> dict[str, Any]:
-    return SETTINGS.load()
-
-
-def save(changes: Mapping[str, object]) -> dict[str, Any]:
-    """Merge `changes` (known keys only) into the settings file; None resets a setting to its default. A bad value raises ValueError, an unknown key KeyError."""
-    return SETTINGS.save(changes)
-
-
-def data_dir() -> str:
-    """The folder that holds application data (created when asked for)."""
-    return SETTINGS.folder("data_dir")
 
 
 def greeting() -> str:
@@ -49,5 +31,6 @@ def greeting() -> str:
     return SETTINGS.get("greeting")
 
 
-def all_settings() -> dict[str, str]:
-    return {"data_dir": data_dir(), "greeting": greeting()}
+def ending() -> str:
+    """The punctuation the configured style ends a greeting with."""
+    return ENDINGS[SETTINGS.get("style")]  # the setting only ever holds one of STYLES

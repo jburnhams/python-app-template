@@ -1,12 +1,17 @@
-"""What the web app's System page reports (GET /api/system): versions, where the data lives, and how full its disk is."""
+"""What the System page adds to strata-python's `GET /api/system` (versions, start time, each folder's disk): how many
+greetings are kept and how much the app's own folder holds, which the page draws against its disk."""
 
 import contextlib
 import os
-import platform
-import shutil
-from typing import Any
 
-from app import __version__, greet, settings
+from strata_python.contracts import ApiModel
+
+
+class AppNumbers(ApiModel):
+    """The app's own fields in `GET /api/system`."""
+
+    greetings: int
+    home_bytes: int
 
 
 def folder_bytes(path: str) -> int:
@@ -17,18 +22,3 @@ def folder_bytes(path: str) -> int:
             with contextlib.suppress(OSError):
                 total += os.path.getsize(os.path.join(root, name))
     return total
-
-
-def status() -> dict[str, Any]:
-    """A snapshot for the System page. Sizes are bytes; the web app formats them."""
-    d = settings.data_dir()
-    du = shutil.disk_usage(d)
-    return {
-        "version": __version__,
-        "python": platform.python_version(),
-        "platform": f"{platform.system()} {platform.release()}".strip(),
-        "data_dir": d,
-        "messages": len(greet.list_messages()),
-        "data_bytes": folder_bytes(d),
-        "disk": {"total": du.total, "used": du.used, "free": du.free},
-    }

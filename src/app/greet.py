@@ -1,118 +1,112 @@
-"""Hello-world domain logic and persistent message log (`<data_dir>/messages.json`, newest first)."""
+"""The sample's business logic: format a greeting, and keep the ones that were sent.
 
-import json
-import os
-from datetime import UTC, datetime
-from typing import Any, cast
+Functions that touch records take the caller's `Session` (the server's per-request `DbSession`, the CLI's
+`db.session()`, a test's `db_session`) and commit their own writes, so they read the same from all three. The answers
+are `contracts.ApiModel`s, which the routes declare, so `/api/openapi.json` describes them and the web app's types are
+generated from it (`web/src/api.generated.ts`) instead of being written twice."""
 
-from strata_python import oslib
+import datetime
+
+from sqlalchemy import delete, func, select
+from sqlalchemy.orm import Session
+from strata_python.contracts import ApiModel, Page
 
 from app import settings
+from app.models import SentGreeting
 
-# A greeting record as stored in messages.json and returned by the API: id, name, greeting, message, created.
-Record = dict[str, Any]
+MAX_NAME = 120
+MAX_GREETING = 60
 
 
 class GreetingError(ValueError):
-    """Raised when a greeting request is invalid."""
+    """A greeting that cannot be sent; the server answers it as a 400 with the sentence (a ValueError)."""
 
 
-def format_greeting(name: str = "World", greeting: str | None = None) -> Record:
-    """Format a greeting for `name` using `greeting` (or the configured default)."""
+class Greeting(ApiModel):
+    """A formatted greeting."""
+
+    name: str
+    greeting: str
+    message: str
+
+
+class Sent(Greeting):
+    """A greeting that was sent and kept. Ids grow with time and are never reused."""
+
+    id: int
+    created: datetime.datetime
+
+    @classmethod
+    def of(cls, row: SentGreeting) -> "Sent":
+        # Every time stored here is UTC. SQLite keeps no zone, so its times come back naive; Postgres's come back in
+        # the session's zone (Etc/UTC on a default server). Either way the answer is in UTC.
+        c = row.created
+        created = c.replace(tzinfo=datetime.UTC) if c.tzinfo is None else c.astimezone(datetime.UTC)
+        return cls(id=row.id, name=row.name, greeting=row.greeting, message=row.message, created=created)
+
+
+class Cleared(ApiModel):
+    cleared: int
+
+
+def format_greeting(name: str = "World", greeting: str | None = None) -> Greeting:
+    """Format a greeting for `name` with `greeting` (or the configured word), ended as the configured style says."""
     clean_name = (name or "").strip() or "World"
     clean_greeting = (greeting or "").strip() or settings.greeting()
-    if len(clean_name) > 120:
-        raise GreetingError("name is too long (at most 120 characters)")
-    if len(clean_greeting) > 60:
-        raise GreetingError("greeting is too long (at most 60 characters)")
-    return {"name": clean_name, "greeting": clean_greeting, "message": f"{clean_greeting}, {clean_name}!"}
+    if len(clean_name) > MAX_NAME:
+        raise GreetingError(f"Use at most {MAX_NAME} characters for the name; this is {len(clean_name)}.")
+    if len(clean_greeting) > MAX_GREETING:
+        raise GreetingError(f"Use at most {MAX_GREETING} characters for the greeting; this is {len(clean_greeting)}.")
+    message = f"{clean_greeting}, {clean_name}{settings.ending()}"
+    return Greeting(name=clean_name, greeting=clean_greeting, message=message)
 
 
-def _store_path() -> str:
-    return os.path.join(settings.data_dir(), "messages.json")
+def send(db: Session, name: str = "World", greeting: str | None = None) -> Sent:
+    """Format a greeting and keep it; returns the kept record."""
+    g = format_greeting(name, greeting)
+    row = SentGreeting(name=g.name, greeting=g.greeting, message=g.message, created=datetime.datetime.now(datetime.UTC))
+    db.add(row)
+    db.commit()
+    return Sent.of(row)
 
 
-def list_messages() -> list[Record]:
-    """Return the recorded greetings from `<data_dir>/messages.json` (newest first)."""
-    p = _store_path()
-    if not os.path.exists(p):
-        return []
-    try:
-        with open(p, encoding="utf8") as f:
-            data = json.load(f)
-    except (OSError, ValueError):
-        return []
-    return cast("list[Record]", data) if isinstance(data, list) else []
+def everything(db: Session) -> list[Sent]:
+    """Every kept greeting, newest first."""
+    return [Sent.of(r) for r in db.scalars(select(SentGreeting).order_by(SentGreeting.id.desc()))]
 
 
-def add_message(name: str = "World", greeting: str | None = None) -> Record:
-    """Create and persist a greeting entry; returns the created record."""
-    rec = format_greeting(name, greeting)
-    lock_path = _store_path() + ".lock"
-    os.makedirs(settings.data_dir(), exist_ok=True)
-    with open(lock_path, "a+", encoding="utf8") as lf, oslib.file_lock(lf):
-        items = list_messages()
-        # Ids are never reused: the count drops when a greeting is removed, and so does the largest id when the newest one goes. The web app hides a removed row by its id
-        # until the removal is committed (useUndoable), so a new greeting under a removed id would vanish with it. `messages.seq` remembers the last id handed out.
-        entry = dict(
-            id=max(_last_id(), max((m.get("id", 0) for m in items), default=0)) + 1,
-            **rec,
-            created=datetime.now(UTC).isoformat(),
-        )
-        items.insert(0, entry)
-        _write(items)
-        with open(_seq_path(), "w", encoding="utf8") as f:
-            f.write(str(entry["id"]))
-    return entry
+def page(db: Session, after: int | None = None, limit: int = 20) -> Page[Sent]:
+    """One page of the log, newest first: the greetings older than the one with id `after` (the last one the client
+    holds). `next` is the cursor for the page after, None on the last one.
+
+    A cursor, not an offset: greetings removed between pages would make an offset skip the ones that moved up to fill
+    the gap. Ids grow with time, so `after` still works when that greeting has itself been removed."""
+    q = select(SentGreeting).order_by(SentGreeting.id.desc()).limit(limit + 1)
+    if after is not None:
+        q = q.where(SentGreeting.id < after)
+    rows = list(db.scalars(q))
+    items = [Sent.of(r) for r in rows[:limit]]
+    return Page[Sent](items=items, next=str(items[-1].id) if len(rows) > limit else None)
 
 
-def _seq_path() -> str:
-    return os.path.join(settings.data_dir(), "messages.seq")
+def count(db: Session) -> int:
+    return db.scalar(select(func.count()).select_from(SentGreeting)) or 0
 
 
-def _last_id() -> int:
-    try:
-        with open(_seq_path(), encoding="utf8") as f:
-            return int(f.read().strip() or 0)
-    except (OSError, ValueError):
-        return 0
+def remove(db: Session, greeting_id: int) -> Sent:
+    """Remove one greeting by id and return it. KeyError (a 404) when there is no such greeting."""
+    row = db.get(SentGreeting, greeting_id)
+    if row is None:
+        raise KeyError(f"There is no greeting {greeting_id}.")
+    gone = Sent.of(row)
+    db.delete(row)
+    db.commit()
+    return gone
 
 
-def _write(items: list[Record]) -> None:
-    tmp = _store_path() + ".tmp"
-    with open(tmp, "w", encoding="utf8") as f:
-        json.dump(items, f, indent=1)
-    os.replace(tmp, _store_path())
-
-
-def page_messages(after: int | None = None, limit: int = 20) -> dict[str, Any]:
-    """One page of the log, newest first: the greetings after the one with id `after` (the last one the client holds), and whether there are more.
-
-    A cursor, not an offset: greetings removed between pages would make an offset skip the ones that moved up to fill the gap. Ids grow with time, so `after` still works when that greeting has itself been removed."""
-    items = list_messages()
-    rest = items if after is None else [m for m in items if m.get("id", 0) < after]
-    return {"messages": rest[:limit], "has_more": len(rest) > limit}
-
-
-def remove_message(message_id: int) -> Record | None:
-    """Remove one greeting by id; returns it, or None when there is no such greeting."""
-    lock_path = _store_path() + ".lock"
-    os.makedirs(settings.data_dir(), exist_ok=True)
-    with open(lock_path, "a+", encoding="utf8") as lf, oslib.file_lock(lf):
-        items = list_messages()
-        found = next((m for m in items if m.get("id") == message_id), None)
-        if found is not None:
-            _write([m for m in items if m is not found])
-    return found
-
-
-def clear_messages() -> dict[str, int]:
-    """Remove all recorded greetings; returns `{cleared: count}`."""
-    lock_path = _store_path() + ".lock"
-    os.makedirs(settings.data_dir(), exist_ok=True)
-    with open(lock_path, "a+", encoding="utf8") as lf, oslib.file_lock(lf):
-        n = len(list_messages())
-        p = _store_path()
-        if os.path.exists(p):
-            os.remove(p)
-    return {"cleared": n}
+def clear(db: Session) -> Cleared:
+    """Remove every kept greeting."""
+    n = count(db)
+    db.execute(delete(SentGreeting))
+    db.commit()
+    return Cleared(cleared=n)

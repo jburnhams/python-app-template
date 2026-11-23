@@ -1,4 +1,4 @@
-"""Unit-suite only: the hypothesis profile (isolated home and no network are autouse in tests/conftest.py for every suite)."""
+"""Unit-suite only: the hypothesis profile (the shared fixtures are in tests/conftest.py and the strata-python plugin)."""
 
 from hypothesis import HealthCheck, settings
 

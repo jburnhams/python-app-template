@@ -1,3 +1,6 @@
+# One PR a week per ecosystem, not one per package. strata-python arrives with the Python group: read its CHANGELOG
+# (every breaking line ends with the migration) before merging. A playwright or lucide-react bump in the web group
+# changes the visual baselines: run "Update visual baselines" on the PR's branch. Security updates still come at once.
 version: 2
 updates:
   - package-ecosystem: uv
@@ -10,4 +13,5 @@ updates:
     groups: { web: { patterns: ["*"] } }
   - package-ecosystem: github-actions
     directory: /
-    schedule: { interval: weekly }
+    schedule: { interval: monthly }
+    groups: { actions: { patterns: ["*"] } }

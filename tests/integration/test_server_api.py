@@ -1,49 +1,65 @@
-"""The HTTP API over real on-disk files: health check, greetings, message log, and settings."""
+"""The real server: the app under uvicorn on a loopback port (the plugin's `live_app`), answering real HTTP requests,
+over the settings file and the SQLite fallback database in the test's home folder, which the CLI shares."""
+
+import json
+import urllib.error
+import urllib.request
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager
+from typing import Any
+
+import pytest
+from fastapi import FastAPI
+from strata_python.testing import CliResult
+
+Cli = Callable[..., CliResult]  # the `cli` fixture (tests/integration/conftest.py)
 
 
-def test_health_and_hello_endpoints(client):
-    assert client.get("/api/health").json() == {"ok": True, "version": "0.1.0"}
-    assert client.get("/api/hello", params={"name": "Linus"}).json() == {
-        "name": "Linus",
-        "greeting": "Hello",
-        "message": "Hello, Linus!",
-    }
+@pytest.fixture
+def server(live_app: Callable[[FastAPI], AbstractContextManager[str]]) -> Iterator[str]:
+    from app.server.app import create_app
+
+    with live_app(create_app()) as base:
+        yield base
 
 
-def test_messages_created_via_http_persist_and_can_be_cleared(client, cli):
-    assert client.get("/api/messages").json() == []
-    m1 = client.post("/api/messages", json={"name": "Alice"}).json()
-    m2 = client.post("/api/messages", json={"name": "Bob", "greeting": "Hi"}).json()
-    assert m1["id"] == 1
-    assert m2["id"] == 2
-    assert [m["message"] for m in client.get("/api/messages").json()] == ["Hi, Bob!", "Hello, Alice!"]
-    assert "Hi, Bob!" in cli("messages").stdout
-    assert client.delete("/api/messages").json() == {"cleared": 2}
-    assert client.get("/api/messages").json() == []
+def call(base: str, method: str, path: str, body: object = None) -> tuple[int, Any]:
+    data = None if body is None else json.dumps(body).encode()
+    req = urllib.request.Request(base + path, data=data, method=method, headers={"Content-Type": "application/json"})  # noqa: S310 - loopback
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:  # noqa: S310 - loopback
+            return r.status, json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read())
 
 
-def test_settings_changes_affect_subsequent_greetings(client):
-    assert client.put("/api/settings", json={"greeting": "Bonjour"}).json()["greeting"] == "Bonjour"
-    assert client.get("/api/hello", params={"name": "Monde"}).json()["message"] == "Bonjour, Monde!"
-    assert client.put("/api/settings", json={"data_dir": "relative"}).status_code == 400
-
-
-def test_one_greeting_removed_over_http_is_gone_from_the_cli_and_the_log(client, cli):
+def test_greetings_sent_over_http_are_kept_and_seen_by_the_cli(server: str, cli: Cli):
+    status, health = call(server, "GET", "/api/health")
+    assert (status, health["ok"], health["version"]) == (200, True, "0.1.0")
     for n in ("Ann", "Ben", "Cat"):
-        client.post("/api/messages", json={"name": n})
-    assert client.delete("/api/messages/2").status_code == 200
+        assert call(server, "POST", "/api/messages", {"name": n})[0] == 200
+    assert call(server, "DELETE", "/api/messages/2")[0] == 200
     out = cli("messages").stdout
-    assert "Hello, Ben!" not in out
-    assert "Hello, Ann!" in out
-    assert "Hello, Cat!" in out
-    assert client.post("/api/messages", json={"name": "Dee"}).json()["id"] == 4
-    page = client.get("/api/messages/page", params={"limit": 2}).json()
-    assert [m["name"] for m in page["messages"]] == ["Dee", "Cat"]
-    assert page["has_more"] is True
-    assert client.get("/api/system").json()["messages"] == 3
+    assert ("Hello, Ann!" in out, "Hello, Ben!" in out, "Hello, Cat!" in out) == (True, False, True)
+    assert call(server, "POST", "/api/messages", {"name": "Dee"})[1]["id"] == 4
+    status, page = call(server, "GET", "/api/messages/page?limit=2")
+    assert (status, [m["name"] for m in page["items"]], page["next"]) == (200, ["Dee", "Cat"], "3")
+    assert call(server, "GET", "/api/system")[1]["greetings"] == 3
 
 
-def test_a_reload_on_any_screen_gets_the_app(client):
-    r = client.get("/settings", params={"tab": "appearance"})
-    assert r.status_code == 200
-    assert '<base href="./">' in r.text
+def test_errors_answer_with_the_sentence(server: str):
+    status, body = call(server, "POST", "/api/messages", {"name": "x" * 121})
+    assert (status, body) == (400, {"detail": "Use at most 120 characters for the name; this is 121.", "payload": None})
+    assert call(server, "DELETE", "/api/messages/99")[0] == 404
+    assert call(server, "PUT", "/api/settings", {"style": "loud"})[0] == 400
+
+
+def test_settings_changes_affect_later_greetings(server: str):
+    assert call(server, "PUT", "/api/settings", {"greeting": "Bonjour", "style": "calm"})[0] == 200
+    assert call(server, "GET", "/api/hello?name=Monde")[1]["message"] == "Bonjour, Monde."
+
+
+def test_a_reload_on_any_screen_gets_the_app(server: str):
+    with urllib.request.urlopen(server + "/settings?tab=appearance", timeout=10) as r:  # noqa: S310 - loopback
+        assert r.status == 200
+        assert '<base href="./">' in r.read().decode()

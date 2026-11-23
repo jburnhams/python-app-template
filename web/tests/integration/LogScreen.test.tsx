@@ -3,15 +3,17 @@ import { logEmpty, logError, logLaterPageError, logLong } from '../../src/mocks/
 import { openApp, screen, waitFor, within } from '../utils/render'
 import { server } from '../utils/server'
 
-const list = () => screen.getByRole('list', { name: 'Greeting log, newest first' })
-const shown = () => within(list()).getAllByRole('listitem').length
+// InfiniteList is a grid of rows (React Aria); items carry data-index, the next-page row does not.
+const list = () => screen.getByRole('grid', { name: 'Greeting log, newest first' })
+const items = () => [...list().querySelectorAll<HTMLElement>('[data-index]')]
+const shown = () => items().length
 
 describe('Log', () => {
   it('shows every greeting and says when that is all', async () => {
     openApp('/log')
     expect(await screen.findByText('That is every greeting kept.')).toBeInTheDocument()
     expect(shown()).toBe(8)
-    expect(within(list()).getAllByRole('listitem')[0]).toHaveTextContent('Welcome, Frances!')
+    expect(items()[0]).toHaveTextContent('Welcome, Frances!')
   })
 
   it('reads a long log a page at a time, after the last greeting held', async () => {
@@ -21,7 +23,7 @@ describe('Log', () => {
     expect(shown()).toBe(20)
     await user.click(more)
     await waitFor(() => expect(shown()).toBe(40))
-    expect(within(list()).getAllByRole('listitem')[20]).toHaveTextContent('#55')        // the page after #56, the last one held
+    expect(items()[20]).toHaveTextContent('#55') // the page after #56, the last one held
     for (let i = 0; i < 2; i++) await user.click(await screen.findByRole('button', { name: 'Show older greetings' }))
     expect(await screen.findByText('That is every greeting kept.')).toBeInTheDocument()
     expect(shown()).toBe(75)

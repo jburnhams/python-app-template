@@ -9,17 +9,20 @@ The web app is meant to be read as well as run: each screen in `web/src/screens/
 ```bash
 uv sync                              # creates .venv from uv.lock (install uv: https://docs.astral.sh/uv/)
 uv run app doctor                         # check the environment
-uv run app hello World                    # CLI hello world
+uv run app hello World --save             # CLI hello world, kept in the database (~/.app/app.db)
+uv run app messages                       # the greetings kept so far
 uv run app serve                          # starts the FastAPI + React app on http://127.0.0.1:8360/
 ```
+
+The server code comes from [strata-python](https://github.com/jburnhams/strata-python) on PyPI (`strata-python[db]`): settings, the server skeleton, shared error answers, `/api/system`, the database layer and the CLI commands. Greetings are kept in a SQLite file in the app's home unless `STRATA_DB_URL` or `APP_DATABASE_URL` names a database (the shared Postgres in a deployment). The API is typed end to end: `uv run app openapi` writes `web/openapi.json` and `cd web && npm run api-types` turns it into `web/src/api.generated.ts`.
 
 For hot-reload frontend development, run `./app serve` in one terminal and `cd web && npm run dev` in another (Vite proxies `/api` to `127.0.0.1:8360`).
 
 ## Using this template for a new project
 
 1. Create a new repository from `python-app-template` on GitHub (or clone it).
-2. Rename `src/app` and the `./app` / `app.cmd` launchers if you want a project-specific package name, and update `pyproject.toml` (`source = ["src/<pkg>"]`), `web/vite.config.ts` (`outDir`), and the settings prefix (`Settings("app", ...)`, `APP_DATA`) in `src/<pkg>/settings.py` and `strata_env_prefix` in `pyproject.toml`.
-3. Replace the sample greeting module (`src/app/greet.py`) and screens (`web/src/screens/`) with your own, keeping the shape: one question per screen, every read through `useLoad`/`DataView`, mock handlers in `web/src/mocks/` for every endpoint.
+2. Rename `src/app` and the `./app` / `app.cmd` launchers if you want a project-specific package name, and update `pyproject.toml` (`source = ["src/<pkg>"]`), `web/vite.config.ts` (`outDir`), and the settings prefix (`Settings("app", ...)`, which names the `APP_*` variables and the `~/.app` home) in `src/<pkg>/settings.py`, `strata_env_prefix` in `pyproject.toml`, and `app = ...` and `models = ...` in `src/<pkg>/strata-db.toml`.
+3. Replace the sample records (`src/app/models.py`, then start the migrations afresh with `uv run strata-db revision -m "..."`) and the sample greeting module (`src/app/greet.py`) and screens (`web/src/screens/`) with your own, keeping the shape: one question per screen, every read through `useLoad`/`DataView`, mock handlers in `web/src/mocks/` for every endpoint.
 4. Give the app its own look: regenerate `web/src/styles/theme.generated.css` with ux-research's `palette.mjs` from seeds that come from your subject, then re-solve the status roles and faces in `theme.css` (the header of each file has the command and the checks).
 5. Rewrite the visual baselines once the screens are yours: `cd web && npm run test:visual:update`, look at every PNG, commit them.
 
@@ -38,7 +41,11 @@ For hot-reload frontend development, run `./app serve` in one terminal and `cd w
 uv sync                                 # runtime + dev dependencies from uv.lock
 uv run pytest tests/unit --cov                 # unit tests + coverage (CI gates on fail_under in pyproject.toml)
 uv run pytest tests/integration -n auto        # CLI and HTTP API end-to-end
+uv run pytest tests/unit --pg                  # the unit suite on a throwaway Postgres (needs Postgres installed)
+uv run strata-db check                         # the migrations match the models
 scripts/check                           # the whole gate (strata-check from strata-python): lockfile, ruff lint + format, pyright strict, ty, unit tests + coverage
+cd web && npm run lint                  # Biome, then oxlint with type information
+cd web && npm run api-types:check       # api.generated.ts matches web/openapi.json
 cd web && npm run test:coverage:gate    # web unit + jsdom integration tests against coverage-floor.json
 cd web && npm run storybook             # every screen in every server state, on :6006
 cd web && npm run test:visual           # build the app and Storybook, then screenshot both light and dark against tests/visual/baselines/

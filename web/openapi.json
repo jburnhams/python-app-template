@@ -1,0 +1,710 @@
+{
+ "components": {
+  "schemas": {
+   "AppSettings": {
+    "properties": {
+     "greeting": {
+      "title": "Greeting",
+      "type": "string"
+     },
+     "style": {
+      "enum": [
+       "excited",
+       "calm"
+      ],
+      "title": "Style",
+      "type": "string"
+     }
+    },
+    "required": [
+     "greeting",
+     "style"
+    ],
+    "title": "AppSettings",
+    "type": "object"
+   },
+   "Cleared": {
+    "properties": {
+     "cleared": {
+      "title": "Cleared",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "cleared"
+    ],
+    "title": "Cleared",
+    "type": "object"
+   },
+   "Folder": {
+    "description": "A folder the app uses, and the disk it is on (None when the folder does not exist yet).",
+    "properties": {
+     "exists": {
+      "title": "Exists",
+      "type": "boolean"
+     },
+     "free_bytes": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Free Bytes"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "path": {
+      "title": "Path",
+      "type": "string"
+     },
+     "total_bytes": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Bytes"
+     }
+    },
+    "required": [
+     "name",
+     "path",
+     "exists"
+    ],
+    "title": "Folder",
+    "type": "object"
+   },
+   "Greeting": {
+    "description": "A formatted greeting.",
+    "properties": {
+     "greeting": {
+      "title": "Greeting",
+      "type": "string"
+     },
+     "message": {
+      "title": "Message",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "greeting",
+     "message"
+    ],
+    "title": "Greeting",
+    "type": "object"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "title": "Detail",
+      "type": "array"
+     }
+    },
+    "title": "HTTPValidationError",
+    "type": "object"
+   },
+   "MessageIn": {
+    "properties": {
+     "greeting": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Greeting"
+     },
+     "name": {
+      "default": "World",
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "title": "MessageIn",
+    "type": "object"
+   },
+   "Page_Sent_": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/Sent"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "next": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Next"
+     },
+     "total": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total"
+     }
+    },
+    "required": [
+     "items"
+    ],
+    "title": "Page[Sent]",
+    "type": "object"
+   },
+   "Sent": {
+    "description": "A greeting that was sent and kept. Ids grow with time and are never reused.",
+    "properties": {
+     "created": {
+      "format": "date-time",
+      "title": "Created",
+      "type": "string"
+     },
+     "greeting": {
+      "title": "Greeting",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "message": {
+      "title": "Message",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "greeting",
+     "message",
+     "id",
+     "created"
+    ],
+    "title": "Sent",
+    "type": "object"
+   },
+   "ServiceStatus": {
+    "description": "Another strata service this app calls, as its health endpoint answered just now.",
+    "properties": {
+     "detail": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Detail"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "ok": {
+      "title": "Ok",
+      "type": "boolean"
+     },
+     "url": {
+      "title": "Url",
+      "type": "string"
+     },
+     "version": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Version"
+     }
+    },
+    "required": [
+     "name",
+     "url",
+     "ok"
+    ],
+    "title": "ServiceStatus",
+    "type": "object"
+   },
+   "SystemInfo": {
+    "additionalProperties": true,
+    "description": "What `GET /api/system` answers: what is running, where its data is, and whether its services answer.",
+    "properties": {
+     "commit": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Commit"
+     },
+     "folders": {
+      "items": {
+       "$ref": "#/components/schemas/Folder"
+      },
+      "title": "Folders",
+      "type": "array"
+     },
+     "platform": {
+      "title": "Platform",
+      "type": "string"
+     },
+     "python": {
+      "title": "Python",
+      "type": "string"
+     },
+     "services": {
+      "items": {
+       "$ref": "#/components/schemas/ServiceStatus"
+      },
+      "title": "Services",
+      "type": "array"
+     },
+     "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+     },
+     "version": {
+      "title": "Version",
+      "type": "string"
+     }
+    },
+    "required": [
+     "version",
+     "python",
+     "platform",
+     "started_at"
+    ],
+    "title": "SystemInfo",
+    "type": "object"
+   },
+   "ValidationError": {
+    "properties": {
+     "ctx": {
+      "title": "Context",
+      "type": "object"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "title": "Location",
+      "type": "array"
+     },
+     "msg": {
+      "title": "Message",
+      "type": "string"
+     },
+     "type": {
+      "title": "Error Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError",
+    "type": "object"
+   }
+  }
+ },
+ "info": {
+  "title": "python-app-template",
+  "version": "0.1.0"
+ },
+ "openapi": "3.1.0",
+ "paths": {
+  "/api/health": {
+   "get": {
+    "operationId": "get_health_api_health_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Get Health Api Health Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Get Health"
+   }
+  },
+  "/api/hello": {
+   "get": {
+    "operationId": "get_hello_api_hello_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "name",
+      "required": false,
+      "schema": {
+       "default": "World",
+       "title": "Name",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "greeting",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Greeting"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Greeting"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Hello"
+   }
+  },
+  "/api/messages": {
+   "delete": {
+    "operationId": "delete_messages_api_messages_delete",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Cleared"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Delete Messages"
+   },
+   "get": {
+    "operationId": "get_messages_api_messages_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Sent"
+         },
+         "title": "Response Get Messages Api Messages Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Get Messages"
+   },
+   "post": {
+    "operationId": "post_message_api_messages_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MessageIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Sent"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Post Message"
+   }
+  },
+  "/api/messages/page": {
+   "get": {
+    "operationId": "get_messages_page_api_messages_page_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "after",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "After"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 20,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Page_Sent_"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Messages Page"
+   }
+  },
+  "/api/messages/{message_id}": {
+   "delete": {
+    "operationId": "delete_message_api_messages__message_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "message_id",
+      "required": true,
+      "schema": {
+       "title": "Message Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Sent"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Message"
+   }
+  },
+  "/api/settings": {
+   "get": {
+    "operationId": "get_settings_api_settings_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AppSettings"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Get Settings"
+   },
+   "put": {
+    "operationId": "put_settings_api_settings_put",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "additionalProperties": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "integer"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "items": {
+            "type": "string"
+           },
+           "type": "array"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "title": "Changes",
+        "type": "object"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AppSettings"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Put Settings"
+   }
+  },
+  "/api/system": {
+   "get": {
+    "operationId": "get_system_api_system_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SystemInfo"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Get System"
+   }
+  }
+ }
+}

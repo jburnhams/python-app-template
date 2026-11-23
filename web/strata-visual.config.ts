@@ -34,8 +34,9 @@ export default defineVisualConfig({
           },
           selected: {
             setup: async page => {
-              await page.getByRole('checkbox', { name: 'Select Welcome, Frances!' }).click()
-              await page.getByRole('checkbox', { name: 'Select Hello, Ken!' }).click()
+              // React Aria draws the checkbox over a visually hidden input, which Playwright will not click: Space on it, as the keyboard chooses a row.
+              await page.getByRole('checkbox', { name: 'Select Welcome, Frances!' }).press('Space')
+              await page.getByRole('checkbox', { name: 'Select Hello, Ken!' }).press('Space')
               await page.getByRole('button', { name: 'Remove 2' }).waitFor()
             },
           },

@@ -7,11 +7,11 @@ import '@fontsource-variable/source-sans-3'
 import '@fontsource-variable/fraunces'
 import '@fontsource-variable/jetbrains-mono'
 import '../src/styles/app.css'
-import { useState } from 'react'
 import type { Decorator, Preview } from '@storybook/react-vite'
 import { setupWorker } from 'msw/browser'
 import { mswLoader } from 'msw-storybook-addon/csf3'
-import { StrataQueryProvider, ThemeProvider, createQueryClient, type ColorSchemePreference } from 'strata-react'
+import { useState } from 'react'
+import { type ColorSchemePreference, createQueryClient, StrataQueryProvider, ThemeProvider } from 'strata-react'
 import { handlers, resetMock } from '../src/mocks/handlers'
 
 const withApp: Decorator = (Story, context) => {
@@ -37,7 +37,9 @@ const preview: Preview = {
       return worker
     }),
   ],
-  beforeEach: () => { resetMock() },
+  beforeEach: () => {
+    resetMock()
+  },
   globalTypes: {
     theme: {
       description: 'Light or dark',

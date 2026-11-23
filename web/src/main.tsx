@@ -10,11 +10,10 @@ import './styles/app.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
-import { StrataQueryProvider, ThemeProvider } from 'strata-react'
-import { BASE } from './api'
+import { appBase, StrataQueryProvider, ThemeProvider } from 'strata-react'
 import { routes } from './routes'
 
-const router = createBrowserRouter(routes, { basename: BASE || '/' })
+const router = createBrowserRouter(routes, { basename: appBase() || '/' })
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

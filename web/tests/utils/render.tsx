@@ -2,7 +2,7 @@
 // Strata's providers (renderRoutes from strata-react/testing: a fresh query client with retries
 // off, ThemeProvider with storage off), with a user-event `user` beside the usual queries.
 import userEvent from '@testing-library/user-event'
-import { renderRoutes, type RenderRoutesOptions } from 'strata-react/testing'
+import { type RenderRoutesOptions, renderRoutes } from 'strata-react/testing'
 import { routes } from '../../src/routes'
 
 /** The app at `route` (`/settings?tab=appearance`). Returns `router` too, to assert where the URL went. */
@@ -11,4 +11,4 @@ export function openApp(route = '/', options: Omit<RenderRoutesOptions, 'route'>
   return { user: userEvent.setup(userOptions), ...renderRoutes(routes, { route, ...rest }) }
 }
 
-export { screen, waitFor, within, act } from '@testing-library/react'
+export { act, screen, waitFor, within } from '@testing-library/react'

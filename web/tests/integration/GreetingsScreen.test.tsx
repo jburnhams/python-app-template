@@ -1,13 +1,22 @@
+import { HttpResponse, http } from 'msw'
+import { expectOneFilledButton } from 'strata-react/testing'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { http, HttpResponse } from 'msw'
 import { addFails, messagesEmpty, messagesError, removeFails } from '../../src/mocks/handlers'
 import { openApp, screen, waitFor, within } from '../utils/render'
 import { mock, server } from '../utils/server'
 
-const table = () => screen.getByRole('table', { name: 'Kept greetings, newest first' })
-const greetings = () => within(table()).getAllByRole('row').slice(1).map(r => within(r).getAllByRole('cell')[1]?.textContent)
+// DataTable is React Aria's grid: rows of gridcells, the first column (the greeting) each row's rowheader.
+const table = () => screen.getByRole('grid', { name: 'Kept greetings, newest first' })
+const greetings = () =>
+  within(table())
+    .getAllByRole('row')
+    .slice(1)
+    .map(r => within(r).getByRole('rowheader').textContent)
+const ready = () => screen.findByRole('grid', { name: 'Kept greetings, newest first' })
 
-afterEach(() => { vi.useRealTimers() })
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 describe('Greetings', () => {
   it('answers its question in the finding and figures, and lists what is kept', async () => {
@@ -21,25 +30,25 @@ describe('Greetings', () => {
 
   it('sorts by a column and keeps the sort in the URL', async () => {
     const { user, router } = openApp('/')
-    await screen.findByRole('table')
-    await user.click(within(table()).getByRole('button', { name: /^To/ }))
+    await ready()
+    await user.click(within(table()).getByRole('columnheader', { name: /^To/ }))
     expect(router.state.location.search).toBe('?sort=name.asc')
     expect(greetings()[0]).toBe('Welcome, Ada!')
   })
 
   it('opens already sorted from a link', async () => {
     openApp('/?sort=sent.asc')
-    await screen.findByRole('table')
+    await ready()
     expect(greetings()[0]).toBe('Hello, Alan!')
   })
 
   it('sends a greeting through Sending… and Sent, and lists it first', async () => {
     const { user } = openApp('/')
-    await screen.findByRole('table')
+    await ready()
     await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Hedy')
     await user.type(screen.getByRole('textbox', { name: 'Greeting' }), 'Good evening')
     await user.click(screen.getByRole('button', { name: 'Send greeting' }))
-    expect(await screen.findByText('Sent', { selector: '[role=status]' })).toBeInTheDocument()        // AsyncButton announces the outcome politely
+    expect(await screen.findByText('Sent', { selector: '[role=status]' })).toBeInTheDocument() // AsyncButton announces the outcome politely
     await waitFor(() => expect(greetings()[0]).toBe('Good evening, Hedy!'))
     expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('')
     expect(mock.messages[0].message).toBe('Good evening, Hedy!')
@@ -54,12 +63,12 @@ describe('Greetings', () => {
 
   it('says under the field when a name is too long, and sends nothing', async () => {
     const { user } = openApp('/')
-    await screen.findByRole('table')
+    await ready()
     const name = screen.getByRole('textbox', { name: 'Name' })
     await user.click(name)
     await user.paste('x'.repeat(121))
     await user.click(screen.getByRole('button', { name: 'Send greeting' }))
-    expect(name).toHaveAccessibleDescription(/Use at most 120 characters; this is 121\./)
+    expect(name).toHaveAccessibleDescription(/Use at most 120 characters for the name; this is 121\./)
     expect(name).toBeInvalid()
     expect(mock.messages).toHaveLength(8)
   })
@@ -67,7 +76,7 @@ describe('Greetings', () => {
   it('says what happened when sending fails, and offers to try again', async () => {
     server.use(addFails)
     const { user } = openApp('/')
-    await screen.findByRole('table')
+    await ready()
     await user.click(screen.getByRole('button', { name: 'Send greeting' }))
     expect(await screen.findByText('The server could not answer (503). Nothing was kept.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
@@ -75,7 +84,7 @@ describe('Greetings', () => {
 
   it('removes a greeting at once with Undo in reach, and Undo brings it back', async () => {
     const { user } = openApp('/')
-    await screen.findByRole('table')
+    await ready()
     await user.click(screen.getByRole('button', { name: 'Remove Welcome, Frances!' }))
     expect(greetings()).not.toContain('Welcome, Frances!')
     expect(screen.getByText('Removed “Welcome, Frances!”.')).toBeInTheDocument()
@@ -87,7 +96,7 @@ describe('Greetings', () => {
   it('commits a removal when the undo window closes', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const { user } = openApp('/', { user: { advanceTimers: vi.advanceTimersByTime } })
-    await screen.findByRole('table')
+    await ready()
     await user.click(screen.getByRole('button', { name: 'Remove Welcome, Frances!' }))
     await vi.advanceTimersByTimeAsync(8000)
     await waitFor(() => expect(mock.messages.map(m => m.name)).not.toContain('Frances'))
@@ -98,7 +107,7 @@ describe('Greetings', () => {
     server.use(removeFails)
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const { user } = openApp('/', { user: { advanceTimers: vi.advanceTimersByTime } })
-    await screen.findByRole('table')
+    await ready()
     await user.click(screen.getByRole('button', { name: 'Remove Welcome, Frances!' }))
     await vi.advanceTimersByTimeAsync(8000)
     expect(await screen.findByText(/“Welcome, Frances!” is back: removing it did not go through\./)).toBeInTheDocument()
@@ -107,16 +116,13 @@ describe('Greetings', () => {
 
   it('removes the chosen greetings together from the bulk bar', async () => {
     const { user } = openApp('/')
-    await screen.findByRole('table')
+    await ready()
     // One filled button at a time: Send greeting is filled until rows are chosen, then the bulk action is.
-    // The filled buttons, by accessible name (AsyncButton keeps every phase's label in its text for its width).
-    const named = ['Send greeting', 'Remove 2']
-    const filled = () => screen.getAllByRole('button').filter(b => b.className.includes('bg-primary')).map(b => named.find(name => screen.queryByRole('button', { name }) === b) ?? b.textContent)
-    expect(filled()).toEqual(['Send greeting'])
+    expect(expectOneFilledButton()).toBe(screen.getByRole('button', { name: 'Send greeting' }))
     await user.click(screen.getByRole('checkbox', { name: 'Select Welcome, Frances!' }))
     await user.click(screen.getByRole('checkbox', { name: 'Select Hello, Ken!' }))
     expect(screen.getByText(/^2\sgreetings selected$/)).toBeInTheDocument()
-    expect(filled()).toEqual(['Remove 2'])
+    expect(expectOneFilledButton()).toBe(screen.getByRole('button', { name: 'Remove 2' }))
     await user.click(screen.getByRole('button', { name: 'Remove 2' }))
     expect(greetings()).toHaveLength(6)
     expect(screen.getByText('Removed 2 greetings.')).toBeInTheDocument()
@@ -124,14 +130,14 @@ describe('Greetings', () => {
     // removal, which would then run against the next test's server).
     await user.click(screen.getByRole('button', { name: 'Undo' }))
     expect(greetings()).toHaveLength(8)
-    expect(filled()).toEqual(['Send greeting'])
+    expect(expectOneFilledButton()).toBe(screen.getByRole('button', { name: 'Send greeting' }))
   })
 
   it('keeps a greeting gone when a bulk removal fails part way, and brings back only the rest', async () => {
     server.use(http.delete('*/api/messages/7', () => new HttpResponse(null, { status: 503, statusText: 'Service Unavailable' })))
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const { user } = openApp('/', { user: { advanceTimers: vi.advanceTimersByTime } })
-    await screen.findByRole('table')
+    await ready()
     await user.click(screen.getByRole('checkbox', { name: 'Select Welcome, Frances!' }))
     await user.click(screen.getByRole('checkbox', { name: 'Select Hello, Ken!' }))
     await user.click(screen.getByRole('button', { name: 'Remove 2' }))

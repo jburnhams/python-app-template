@@ -1,3 +1,4 @@
+import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { saveSettingsFails, settingsError } from '../../src/mocks/handlers'
 import { openApp, screen, waitFor } from '../utils/render'
@@ -8,25 +9,34 @@ describe('Settings', () => {
     const { user } = openApp('/settings')
     const greeting = await screen.findByRole('textbox', { name: 'Default greeting' })
     expect(greeting).toHaveValue('Hello')
-    expect(screen.getByRole('textbox', { name: 'Data folder' })).toHaveValue('/home/ada/.local/share/greetings')
+    expect(screen.getByRole('radio', { name: /^Excited/ })).toBeChecked()
     await user.clear(greeting)
     await user.type(greeting, 'Howdy')
+    await user.click(screen.getByRole('radio', { name: /^Calm/ }))
     await user.click(screen.getByRole('button', { name: 'Save settings' }))
     expect(await screen.findByText('Saved', { selector: '[role=status]' })).toBeInTheDocument()
-    expect(mock.settings.greeting).toBe('Howdy')
+    expect(mock.settings).toEqual({ greeting: 'Howdy', style: 'calm' })
   })
 
-  it('says under each field what is wrong, and saves nothing', async () => {
+  it('says under the field what is wrong, saves nothing, and clears the message as it is fixed', async () => {
     const { user } = openApp('/settings')
     const greeting = await screen.findByRole('textbox', { name: 'Default greeting' })
-    const folder = screen.getByRole('textbox', { name: 'Data folder' })
     await user.clear(greeting)
-    await user.clear(folder)
-    await user.type(folder, 'relative/path')
     await user.click(screen.getByRole('button', { name: 'Save settings' }))
     expect(greeting).toHaveAccessibleDescription(/Enter the word greetings start with/)
-    expect(folder).toHaveAccessibleDescription(/Use a full path from the top of the disk/)
+    expect(greeting).toBeInvalid()
     expect(mock.settings.greeting).toBe('Hello')
+    await user.type(greeting, 'H')
+    expect(greeting).not.toBeInvalid()
+  })
+
+  it('says why the server refused a change', async () => {
+    server.use(
+      http.put('*/api/settings', () => HttpResponse.json({ detail: 'greeting: must not be blank', payload: null }, { status: 400 })),
+    )
+    const { user } = openApp('/settings')
+    await user.click(await screen.findByRole('button', { name: 'Save settings' }))
+    expect(await screen.findByText(/greeting: must not be blank\.? The settings were not changed\./)).toBeInTheDocument()
   })
 
   it('says what happened when saving fails', async () => {
@@ -47,7 +57,7 @@ describe('Settings', () => {
   it('opens on a tab from a link', () => {
     openApp('/settings?tab=appearance')
     expect(screen.getByRole('tab', { name: 'Appearance' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('group', { name: 'Colour scheme' })).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: 'Colour scheme' })).toBeInTheDocument()
   })
 
   it('says the server could not answer', async () => {

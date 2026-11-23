@@ -6,12 +6,12 @@
 // page path with the app (src/app/server/app.py), so a reload or a shared link opens that screen,
 // and anything a person would link to (sort, tab, page) lives in the URL's search.
 import type { RouteObject } from 'react-router'
-import { Layout } from './screens/Layout'
 import { GreetingsScreen } from './screens/GreetingsScreen'
+import { Layout } from './screens/Layout'
 import { LogScreen } from './screens/LogScreen'
-import { SystemScreen } from './screens/SystemScreen'
-import { SettingsScreen } from './screens/SettingsScreen'
 import { NotFoundScreen } from './screens/NotFoundScreen'
+import { SettingsScreen } from './screens/SettingsScreen'
+import { SystemScreen } from './screens/SystemScreen'
 
 export const routes: RouteObject[] = [
   {

@@ -152,13 +152,13 @@ export interface components {
             /** Exists */
             exists: boolean;
             /** Free Bytes */
-            free_bytes?: number | null;
+            free_bytes: number | null;
             /** Name */
             name: string;
             /** Path */
             path: string;
             /** Total Bytes */
-            total_bytes?: number | null;
+            total_bytes: number | null;
         };
         /**
          * Greeting
@@ -192,9 +192,35 @@ export interface components {
             /** Items */
             items: components["schemas"]["Sent"][];
             /** Next */
-            next?: string | null;
+            next: string | null;
             /** Total */
-            total?: number | null;
+            total: number | null;
+        };
+        /** PythonAppTemplateSystemInfo */
+        PythonAppTemplateSystemInfo: {
+            /** Commit */
+            commit: string | null;
+            /** Folders */
+            folders: components["schemas"]["Folder"][];
+            /** Greetings */
+            greetings: number;
+            /** Home Bytes */
+            home_bytes: number;
+            /** Platform */
+            platform: string;
+            /** Python */
+            python: string;
+            /** Services */
+            services: components["schemas"]["ServiceStatus"][];
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Version */
+            version: string;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * Sent
@@ -221,7 +247,7 @@ export interface components {
          */
         ServiceStatus: {
             /** Detail */
-            detail?: string | null;
+            detail: string | null;
             /** Name */
             name: string;
             /** Ok */
@@ -229,32 +255,7 @@ export interface components {
             /** Url */
             url: string;
             /** Version */
-            version?: string | null;
-        };
-        /**
-         * SystemInfo
-         * @description What `GET /api/system` answers: what is running, where its data is, and whether its services answer.
-         */
-        SystemInfo: {
-            /** Commit */
-            commit?: string | null;
-            /** Folders */
-            folders?: components["schemas"]["Folder"][];
-            /** Platform */
-            platform: string;
-            /** Python */
-            python: string;
-            /** Services */
-            services?: components["schemas"]["ServiceStatus"][];
-            /**
-             * Started At
-             * Format: date-time
-             */
-            started_at: string;
-            /** Version */
-            version: string;
-        } & {
-            [key: string]: unknown;
+            version: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -538,7 +539,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SystemInfo"];
+                    "application/json": components["schemas"]["PythonAppTemplateSystemInfo"];
                 };
             };
         };

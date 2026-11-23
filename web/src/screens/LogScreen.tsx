@@ -38,12 +38,8 @@ function RowsSkeleton({ rows = 3 }: { rows?: number }) {
 export function LogScreen() {
   const log = useInfiniteLoad({
     queryKey: keys.log,
-    // The server always sends `next`, but strata-python 0.2.6's Page leaves it optional in the schema
-    // (a field with a default), so the generated type says `next?`; `?? null` says what is sent.
     queryFn: ({ cursor, signal }) =>
-      api
-        .get('/api/messages/page', { query: { after: cursor === undefined ? null : Number(cursor), limit: PAGE_SIZE }, signal })
-        .then(page => ({ ...page, next: page.next ?? null })),
+      api.get('/api/messages/page', { query: { after: cursor === undefined ? null : Number(cursor), limit: PAGE_SIZE }, signal }),
     itemKey: (m: Sent) => String(m.id),
     ...apiPage<Sent>(),
   })

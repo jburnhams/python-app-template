@@ -77,7 +77,9 @@
     "required": [
      "name",
      "path",
-     "exists"
+     "exists",
+     "free_bytes",
+     "total_bytes"
     ],
     "title": "Folder",
     "type": "object"
@@ -174,9 +176,79 @@
      }
     },
     "required": [
-     "items"
+     "items",
+     "next",
+     "total"
     ],
     "title": "Page[Sent]",
+    "type": "object"
+   },
+   "PythonAppTemplateSystemInfo": {
+    "additionalProperties": true,
+    "properties": {
+     "commit": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Commit"
+     },
+     "folders": {
+      "items": {
+       "$ref": "#/components/schemas/Folder"
+      },
+      "title": "Folders",
+      "type": "array"
+     },
+     "greetings": {
+      "title": "Greetings",
+      "type": "integer"
+     },
+     "home_bytes": {
+      "title": "Home Bytes",
+      "type": "integer"
+     },
+     "platform": {
+      "title": "Platform",
+      "type": "string"
+     },
+     "python": {
+      "title": "Python",
+      "type": "string"
+     },
+     "services": {
+      "items": {
+       "$ref": "#/components/schemas/ServiceStatus"
+      },
+      "title": "Services",
+      "type": "array"
+     },
+     "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+     },
+     "version": {
+      "title": "Version",
+      "type": "string"
+     }
+    },
+    "required": [
+     "greetings",
+     "home_bytes",
+     "version",
+     "commit",
+     "python",
+     "platform",
+     "started_at",
+     "folders",
+     "services"
+    ],
+    "title": "PythonAppTemplateSystemInfo",
     "type": "object"
    },
    "Sent": {
@@ -255,65 +327,11 @@
     "required": [
      "name",
      "url",
-     "ok"
+     "ok",
+     "version",
+     "detail"
     ],
     "title": "ServiceStatus",
-    "type": "object"
-   },
-   "SystemInfo": {
-    "additionalProperties": true,
-    "description": "What `GET /api/system` answers: what is running, where its data is, and whether its services answer.",
-    "properties": {
-     "commit": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Commit"
-     },
-     "folders": {
-      "items": {
-       "$ref": "#/components/schemas/Folder"
-      },
-      "title": "Folders",
-      "type": "array"
-     },
-     "platform": {
-      "title": "Platform",
-      "type": "string"
-     },
-     "python": {
-      "title": "Python",
-      "type": "string"
-     },
-     "services": {
-      "items": {
-       "$ref": "#/components/schemas/ServiceStatus"
-      },
-      "title": "Services",
-      "type": "array"
-     },
-     "started_at": {
-      "format": "date-time",
-      "title": "Started At",
-      "type": "string"
-     },
-     "version": {
-      "title": "Version",
-      "type": "string"
-     }
-    },
-    "required": [
-     "version",
-     "python",
-     "platform",
-     "started_at"
-    ],
-    "title": "SystemInfo",
     "type": "object"
    },
    "ValidationError": {
@@ -696,7 +714,7 @@
       "content": {
        "application/json": {
         "schema": {
-         "$ref": "#/components/schemas/SystemInfo"
+         "$ref": "#/components/schemas/PythonAppTemplateSystemInfo"
         }
        }
       },

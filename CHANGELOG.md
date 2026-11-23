@@ -4,6 +4,16 @@ Newest first, grouped by day. One entry per change, in the same commit or PR as 
 
 ## 2026-11-23
 
+**strata-python 0.2.7: the system and page types come from the schema (branch `claude/project-thread-61o806`)**
+Jonathan asked for the template to take the strata-python release that fixed the two issues found in the move above (strata-python#45, #46), so the web app no longer writes those types by hand.
+
+- `pyproject.toml`, `uv.lock`: `strata-python[db]>=0.2.7,<0.3`.
+- `src/app/server/app.py`: the `extra` callable returns `AppNumbers` and is annotated so, so `/api/system` is `PythonAppTemplateSystemInfo` in the schema with `greetings` and `home_bytes`.
+- `web/openapi.json`, `web/src/api.generated.ts`: regenerated; `Page.next`, `Page.total`, `Folder.free_bytes`/`total_bytes` and `SystemInfo.commit` are required (sent, possibly null).
+- `web/src/api.ts`: `SystemStatus` is `Schema<'PythonAppTemplateSystemInfo'>`, no hand-written fields.
+- `web/src/screens/LogScreen.tsx`: the `page.next ?? null` fill-in is gone.
+- `web/src/mocks/handlers.ts`, `web/tests/unit/logic.test.ts`: mock pages send `total: null` as the server does; a folder fixture names its unread disk fields.
+
 **Latest strata-python and strata-react, every dependency current, the template as the example app (branch `claude/project-thread-61o806`)**
 Jonathan asked for the template to use the latest strata-python and strata-react, for every other dependency to be at its latest, and for it to adopt the working practices that make it a good starting point for new apps. That meant taking strata-python from PyPI rather than a git source, keeping the sample's greetings in a database through `strata_python.db`, typing the API end to end, and moving the web tooling onto leaflet-node's stack (Biome + oxlint). Correction: the earlier rule that the template ships no database is superseded; greetings now live in SQLite (or Postgres) and `data_dir` is gone.
 

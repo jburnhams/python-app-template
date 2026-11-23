@@ -42,7 +42,7 @@ export function messagePage(url: string, list: Sent[]): SentPage {
   const limit = Number(params.get('limit') ?? 20)
   const rest = after === null ? list : list.filter(m => m.id < Number(after))
   const items = rest.slice(0, limit)
-  return { items, next: rest.length > limit ? String(items[items.length - 1].id) : null }
+  return { items, next: rest.length > limit ? String(items[items.length - 1].id) : null, total: null }
 }
 
 const refused = (detail: string, status = 400) => HttpResponse.json({ detail }, { status })
@@ -88,7 +88,7 @@ export const addFails = http.post(at(paths.messages), () => new HttpResponse(nul
 export const removeFails = http.delete(at(paths.message), () => new HttpResponse(null, { status: 503, statusText: 'Service Unavailable' }))
 
 export const logLoading = http.get(at(paths.messagesPage), () => delay('infinite'))
-export const logEmpty = http.get(at(paths.messagesPage), () => HttpResponse.json({ items: [], next: null }))
+export const logEmpty = http.get(at(paths.messagesPage), () => HttpResponse.json({ items: [], next: null, total: null }))
 export const logError = http.get(at(paths.messagesPage), () => new HttpResponse(null, { status: 503, statusText: 'Service Unavailable' }))
 /** 75 greetings, four pages of 20. */
 export const logLong = http.get(at(paths.messagesPage), ({ request }) => HttpResponse.json(messagePage(request.url, longLog)))

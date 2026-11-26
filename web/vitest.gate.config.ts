@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { defineConfig, mergeConfig } from 'vitest/config'
+import { defineConfig, mergeConfig } from 'vite-plus'
 import baseConfig from './vitest.config.ts'
 
 // The coverage gate: unit + integration together must stay at or above the floors in coverage-floor.json.

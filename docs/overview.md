@@ -19,7 +19,7 @@ Provide a clean, minimal starting point for full-stack local-first Python + Reac
   - React Router with real paths (`web/src/routes.tsx`, one tree shared by the app, the tests and the stories); URL state for sort and tabs. The server answers every page path with the app and a relative `<base>`, so one build works at `/` or behind a reverse proxy at `/<subpath>/` (`web.add_web` on the server, strata-react's `appBase()` and `createTypedApi` in the browser).
   - Types from the server: `./app openapi` writes `web/openapi.json`, strata-react's `strata-api-types` writes `web/src/api.generated.ts`, and `createTypedApi<paths>()` checks every path, parameter, body and answer against it.
   - Server data through TanStack Query (`useLoad`, `useInfiniteLoad` with `apiPage`), shown through `DataView`/`InfiniteList` so loading, empty and error states cannot be left out; writes through `useAsyncAction` with `validate` for field messages.
-  - Biome and oxlint (with type information) lint the web code, as in the libraries.
+  - Vite+ (`vp`) runs the web toolchain: Oxfmt formats and Oxlint (with type information) lints the web code, Vite 8 builds it and Vitest tests it. Its `vite`, `vitest` and `vite-plus` pins are npm `overrides` written by `vp migrate`.
   - MSW handlers for every endpoint (`web/src/mocks/`) serve the jsdom tests, Storybook and the visual suite.
   - `npm run build` outputs directly to `src/app/server/static/`.
 

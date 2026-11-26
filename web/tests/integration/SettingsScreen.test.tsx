@@ -1,5 +1,5 @@
 import { HttpResponse, http } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { saveSettingsFails, settingsError } from '../../src/mocks/handlers'
 import { openApp, screen, waitFor } from '../utils/render'
 import { mock, server } from '../utils/server'

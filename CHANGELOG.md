@@ -11,7 +11,7 @@ Jonathan asked whether the template used the full VoidZero stack and then to ado
 - `web/vite.config.ts`: new `fmt` block (single quotes, no semicolons, width 140, the style the code already had) and `lint` block (the type-aware rules from the old `.oxlintrc.json`, plus Oxlint's default correctness rules, which Biome used to cover in part). `web/biome.json` and `web/.oxlintrc.json` deleted. Not carried over: Biome's own lint rules (accessibility and style rules among them); Strata's components carry the accessibility behaviour.
 - `web/tests/**`, `web/vitest*.config.ts`: imports of `vitest` rewritten to `vite-plus/test`; Oxfmt reformatted a few test files that Biome had formatted slightly differently. `web/.gitignore` **new** (`.vitest/`).
 - `.github/workflows/unit.yml`, `README.md`, `AGENTS.md`, `docs/overview.md`: wording for the new lint and format commands.
-- Checked: `npm run lint`, `typecheck`, `test:coverage:gate` (100% on every measure), `build`, and `test:visual` (78 of 78 shots match). Not run: the Python checks, because nothing in Python changed.
+- Checked: `npm run lint`, `typecheck`, `test:coverage:gate` (100% on every measure), `build`, and `test:visual` (78 of 78 shots match). `scripts/check` (lockfile, ruff, pyright, ty, 24 unit tests at 100% coverage): all passed.
 
 ## 2026-11-23
 

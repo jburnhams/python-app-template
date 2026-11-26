@@ -1,5 +1,5 @@
 import { cleanup } from '@testing-library/react'
-import { afterAll, afterEach, beforeAll } from 'vitest'
+import { afterAll, afterEach, beforeAll } from 'vite-plus/test'
 import '@testing-library/jest-dom/vitest'
 import { installLayoutShims } from 'strata-react/testing'
 import { resetMock, server } from './server'

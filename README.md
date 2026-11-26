@@ -44,7 +44,7 @@ uv run pytest tests/integration -n auto        # CLI and HTTP API end-to-end
 uv run pytest tests/unit --pg                  # the unit suite on a throwaway Postgres (needs Postgres installed)
 uv run strata-db check                         # the migrations match the models
 scripts/check                           # the whole gate (strata-check from strata-python): lockfile, ruff lint + format, pyright strict, ty, unit tests + coverage
-cd web && npm run lint                  # Biome, then oxlint with type information
+cd web && npm run lint                  # Vite+: Oxfmt check, then Oxlint with type information (vp check)
 cd web && npm run api-types:check       # api.generated.ts matches web/openapi.json
 cd web && npm run test:coverage:gate    # web unit + jsdom integration tests against coverage-floor.json
 cd web && npm run storybook             # every screen in every server state, on :6006

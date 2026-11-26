@@ -1,4 +1,4 @@
-import { defineConfig, mergeConfig } from 'vitest/config'
+import { defineConfig, mergeConfig } from 'vite-plus'
 import viteConfig from './vite.config.ts'
 
 // Unit tests run in node (pure logic); integration tests render the app's routes in jsdom with the
@@ -10,7 +10,10 @@ export default mergeConfig(
   defineConfig({
     test: {
       projects: [
-        { extends: true, test: { name: 'unit', include: ['tests/unit/**/*.test.{ts,tsx}'], environment: 'node' } },
+        {
+          extends: true,
+          test: { name: 'unit', include: ['tests/unit/**/*.test.{ts,tsx}'], environment: 'node' },
+        },
         {
           extends: true,
           test: {
@@ -22,7 +25,12 @@ export default mergeConfig(
         },
       ],
       // src/mocks is the test double, not the app; it is exercised by every test and story that uses it.
-      coverage: { provider: 'v8', include: ['src/**/*.{ts,tsx}'], exclude: ['src/main.tsx', 'src/mocks/**'], reporter: ['text', 'lcov'] },
+      coverage: {
+        provider: 'v8',
+        include: ['src/**/*.{ts,tsx}'],
+        exclude: ['src/main.tsx', 'src/mocks/**'],
+        reporter: ['text', 'lcov'],
+      },
     },
   }),
 )

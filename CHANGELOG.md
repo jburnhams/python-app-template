@@ -2,6 +2,17 @@
 
 Newest first, grouped by day. One entry per change, in the same commit or PR as the change.
 
+## 2026-11-26
+
+**Web toolchain on Vite+ (branch `claude/project-thread-wu2cpj`)**
+Jonathan asked whether the template used the full VoidZero stack and then to adopt Vite+ to standardise; strata-react did the same in jburnhams/strata-react#394. The template already had Vite 8, Vitest 5 and Oxlint; Biome did the formatting and the general linting. Dependencies: `vite-plus` added; `@biomejs/biome`, `oxlint` and `oxlint-tsgolint` removed (Vite+ brings Oxlint and its type-aware backend, and Oxfmt does the formatting).
+
+- `web/package.json`: scripts call `vp` (`vp dev`, `vp build`, `vp test`), `lint` is `vp check --deny-warnings`, `format` is `vp fmt`. `vite` and `vitest` are `overrides` pointing at Vite+'s builds, and `vite-plus` is overridden to itself, because Storybook's optional peer `vite-plus ^0.1.15 || ^0.2.0` otherwise pulls in 0.2.9 and `vp migrate` then downgrades Vite and Vitest.
+- `web/vite.config.ts`: new `fmt` block (single quotes, no semicolons, width 140, the style the code already had) and `lint` block (the type-aware rules from the old `.oxlintrc.json`, plus Oxlint's default correctness rules, which Biome used to cover in part). `web/biome.json` and `web/.oxlintrc.json` deleted. Not carried over: Biome's own lint rules (accessibility and style rules among them); Strata's components carry the accessibility behaviour.
+- `web/tests/**`, `web/vitest*.config.ts`: imports of `vitest` rewritten to `vite-plus/test`; Oxfmt reformatted a few test files that Biome had formatted slightly differently. `web/.gitignore` **new** (`.vitest/`).
+- `.github/workflows/unit.yml`, `README.md`, `AGENTS.md`, `docs/overview.md`: wording for the new lint and format commands.
+- Checked: `npm run lint`, `typecheck`, `test:coverage:gate` (100% on every measure), `build`, and `test:visual` (78 of 78 shots match). Not run: the Python checks, because nothing in Python changed.
+
 ## 2026-11-23
 
 **strata-python 0.2.7: the system and page types come from the schema (branch `claude/project-thread-61o806`)**

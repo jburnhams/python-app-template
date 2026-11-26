@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { openApp, screen, within } from '../utils/render'
 
 describe('the app frame', () => {

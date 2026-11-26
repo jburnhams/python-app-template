@@ -1,6 +1,6 @@
 import { HttpResponse, http } from 'msw'
 import { expectOneFilledButton } from 'strata-react/testing'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 import { addFails, messagesEmpty, messagesError, removeFails } from '../../src/mocks/handlers'
 import { openApp, screen, waitFor, within } from '../utils/render'
 import { mock, server } from '../utils/server'

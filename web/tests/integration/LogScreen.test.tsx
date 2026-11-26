@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { logEmpty, logError, logLaterPageError, logLong } from '../../src/mocks/handlers'
 import { openApp, screen, waitFor, within } from '../utils/render'
 import { server } from '../utils/server'

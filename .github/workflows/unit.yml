@@ -73,7 +73,7 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
-      - name: Lint (Biome, then oxlint with type information)
+      - name: Lint (Oxfmt check, then Oxlint with type information, through Vite+)
         run: npm run lint
       - run: npm run typecheck
       # web/openapi.json is checked against the server by the Python unit tests; this checks the types made from it.

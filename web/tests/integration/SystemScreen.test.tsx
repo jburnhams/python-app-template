@@ -1,5 +1,5 @@
 import { createQueryClient } from 'strata-react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { keys } from '../../src/api'
 import { systemStatus } from '../../src/mocks/fixtures'
 import { systemError, systemNearlyFull, systemUnread } from '../../src/mocks/handlers'
@@ -37,7 +37,10 @@ describe('System', () => {
   it('links to settings in the app and to the API outside it', async () => {
     openApp('/system')
     expect(
-      await screen.findByRole('link', { name: /^Settings/, description: /Change the default greeting and how greetings end/ }),
+      await screen.findByRole('link', {
+        name: /^Settings/,
+        description: /Change the default greeting and how greetings end/,
+      }),
     ).toHaveAttribute('href', '/settings')
     expect(screen.getByRole('link', { name: /API reference/ })).toHaveAttribute('href', '/api/docs')
   })
